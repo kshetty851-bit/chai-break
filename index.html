@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chai Break Studios</title>
+<meta name="description" content="Small, cheerful Android games about everyday Indian life, made by Chai Break Studios.">
+<meta property="og:title" content="Chai Break Studios">
+<meta property="og:description" content="Small, cheerful games about everyday Indian life: gully cricket, chai stalls, Mumbai locals and more.">
+<meta property="og:image" content="img/hero.webp">
+<meta name="theme-color" content="#f4b860">
+<style>
+/* Layout: one long chai-stall page. Painted-wall hero, game cards with phone-framed screenshots, about the developer, footer. */
+@font-face{font-family:'CB Sign'; src:url('fonts/baloo-2-latin-800-normal.woff2') format('woff2'); font-weight:800; font-display:swap}
+@font-face{font-family:'CB Hand'; src:url('fonts/Kalam-700.woff2') format('woff2'); font-weight:700; font-display:swap}
+:root{
+  --bg:#fff4e2; --panel:#ffffff; --ink:#2a1a0e; --muted:#6e5643; --line:#efdcc4;
+  --chai:#a8642a; --chai-deep:#7a4318; --kesar:#e0912f; --elaichi:#4f7a2a; --neel:#3d6f99;
+  --sign:'CB Sign','Baloo 2',system-ui,sans-serif; --hand:'CB Hand','Kalam',cursive;
+  --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; font:16px/1.55 var(--body); color:var(--ink);
+  background:
+    radial-gradient(60% 40% at 0% 0%, rgba(255,183,77,.5), transparent 70%),
+    radial-gradient(50% 35% at 100% 10%, rgba(255,128,171,.4), transparent 70%),
+    radial-gradient(55% 40% at 100% 60%, rgba(100,181,246,.35), transparent 70%),
+    radial-gradient(50% 40% at 0% 90%, rgba(129,199,132,.4), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(168,100,42,.10) 1px, transparent 1.6px) 0 0/18px 18px,
+    var(--bg);
+  background-attachment:fixed, fixed, fixed, fixed, scroll, scroll}
+.wrap{max-width:1160px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left))}
+img{max-width:100%; height:auto}
+a{color:var(--chai-deep)}
+:focus-visible{outline:3px solid var(--kesar); outline-offset:2px}
+
+/* Top bar */
+.top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
+.logo{font:800 22px/1 var(--sign); color:var(--chai-deep); text-decoration:none; display:flex; align-items:center; gap:8px}
+.logo svg{width:28px; height:28px}
+.top nav{display:flex; gap:16px; font-size:15px}
+.top nav a{text-decoration:none; color:var(--ink)}
+.top nav a:hover{color:var(--chai)}
+
+/* Hero: whole picture, studio name painted on the orange wall (image x 0-49%, y 39-80%; the boy's bat starts at y 58%) */
+.hero{position:relative; overflow:hidden; container-type:inline-size; aspect-ratio:2752/1536; border-radius:24px;
+  background:#e9a548 url('img/hero.webp') center/100% 100% no-repeat; box-shadow:0 18px 40px -24px rgba(120,60,10,.6)}
+.wall{position:absolute; left:2.6%; top:40.5%; width:45%}
+.eyebrow{margin:0 0 .3cqw; font:700 1.3cqw var(--hand); letter-spacing:.14em; text-transform:uppercase; color:#5b1f0b; mix-blend-mode:multiply; opacity:.8; transform:rotate(-1deg)}
+h1{margin:0; font:800 4.6cqw/1 var(--sign); white-space:nowrap; color:#fff6e6;
+  text-shadow:.18cqw .18cqw 0 #8a2a12, .36cqw .36cqw 0 rgba(90,30,10,.35); transform:rotate(-1.6deg); transform-origin:left center; filter:url(#paint)}
+h1 .b{color:#ffd23f}
+.wall .lede{position:absolute; left:0; top:calc(100% + .8cqw); width:74%; margin:0; font:700 1.55cqw/1.38 var(--hand); color:#4a1a08;
+  mix-blend-mode:multiply; opacity:.86; transform:rotate(-1deg); filter:url(#paint)}
+.lede-below{display:none; margin:14px 4px 0; color:var(--muted)}
+@media (max-width:640px){ .eyebrow{font-size:2.6cqw} h1{font-size:6.4cqw; white-space:normal} .wall .lede{display:none} .lede-below{display:block} }
+
+/* Intro stats */
+.stats{display:flex; flex-wrap:wrap; gap:12px; margin:22px 0 8px}
+.stat{flex:1 1 150px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 18px}
+.stat b{display:block; font:800 34px/1.1 var(--sign); color:var(--chai)}
+.stat span{color:var(--muted); font-size:14px}
+
+/* Games */
+h2{font:800 clamp(28px,4vw,38px)/1.1 var(--sign); color:var(--chai-deep); margin:40px 0 6px}
+.sub{margin:0 0 18px; color:var(--muted)}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:18px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s}
+.card:hover{transform:translateY(-4px); box-shadow:0 16px 30px -18px rgba(120,60,10,.55)}
+.pic{position:relative; overflow:hidden; height:260px; display:flex; justify-content:center; align-items:flex-end}
+.pic .bg{position:absolute; inset:-24px; background-size:cover; background-position:center; filter:blur(18px) saturate(1.4)}
+.pic.phone img{position:relative; height:244px; width:auto; aspect-ratio:9/19; object-fit:cover; object-position:top; border:3px solid #1f1a17; border-bottom:0;
+  border-radius:18px 18px 0 0; box-shadow:0 10px 24px rgba(0,0,0,.35); transform:translateY(8px) rotate(-2deg); transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.card:hover .pic.phone img{transform:translateY(0) rotate(0) scale(1.04)}
+.pic.wide img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.body{padding:14px 16px 18px; display:flex; flex-direction:column; gap:8px; flex:1}
+.badge{align-self:flex-start; font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px}
+.badge.live{background:#dff3e4; color:#1e6b36} .badge.soon{background:#fff0d6; color:#8a4a10} .badge.shop{background:#e6eef8; color:#2b5680}
+.card h3{margin:0; display:flex; align-items:center; gap:10px; font:800 20px/1.15 var(--sign)}
+.icon{flex:none; width:40px; height:40px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.2); object-fit:cover}
+.icon.blank{display:none}
+.card p{margin:0; color:var(--muted)}
+.btn{margin-top:auto; align-self:flex-start; padding:8px 14px; border-radius:999px; background:var(--chai); color:#fff; text-decoration:none; font-weight:600}
+
+/* About */
+.about{display:grid; grid-template-columns:auto minmax(0,1fr); gap:20px; align-items:start; margin-top:44px; padding:26px; border-radius:24px;
+  background:linear-gradient(135deg,#fff 0%,#ffe9c7 100%); border:1px solid var(--line); box-shadow:0 12px 32px -20px rgba(120,60,10,.5)}
+.avatar{width:72px; height:72px; border-radius:50%; display:grid; place-items:center; color:#fff; font:800 28px/1 var(--sign);
+  background:linear-gradient(135deg,#e0912f,#a8521b)}
+.about h2{margin:0 0 2px}
+.about .role{margin:0 0 12px; color:var(--chai-deep); font-size:13px; letter-spacing:.08em; text-transform:uppercase; font-weight:600}
+.about p{margin:0 0 10px; max-width:68ch}
+.sig{font:700 24px var(--hand); color:#a8521b}
+@media (max-width:520px){ .about{grid-template-columns:1fr} }
+
+footer{margin-top:36px; padding-top:18px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:8px 20px; justify-content:space-between; color:var(--muted); font-size:14px}
+
+@media (prefers-reduced-motion:no-preference) and (min-width:641px){
+  .painting .eyebrow,.painting h1,.painting .wall .lede{animation:paint 1.1s cubic-bezier(.2,.8,.2,1) both}
+  .painting h1{animation-delay:.25s} .painting .wall .lede{animation-delay:.6s}
+  @keyframes paint{from{clip-path:inset(-20% 100% -20% 0)}to{clip-path:inset(-20% -5% -20% 0)}}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <filter id="paint"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2"/></filter>
+</svg>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="#top"><svg viewBox="0 0 72 72" aria-hidden="true"><path d="M16 24h40l-5 40a4 4 0 0 1-4 4H25a4 4 0 0 1-4-4z" fill="#fff" stroke="#7a4318" stroke-width="3"/><path d="M19 34h34l-3.6 29a3 3 0 0 1-3 2.6H25.6a3 3 0 0 1-3-2.6z" fill="#a8642a"/></svg>Chai Break</a>
+    <nav><a href="#games">Games</a><a href="#about">About</a></nav>
+  </header>
+
+  <section class="hero" id="top" role="img" aria-label="A Mumbai chai stall at golden hour with kids, a puppy and a pani puri cart; Chai Break Studios is painted on the wall">
+    <div class="wall">
+      <p class="eyebrow">Indie games · made in India</p>
+      <h1>Chai Break <span class="b">Studios</span></h1>
+      <p class="lede">Small, cheerful games about everyday Indian life: gully cricket, the chai stall, the Mumbai local, and the mummy with a chappal. Made to be played in a chai break.</p>
+    </div>
+  </section>
+  <p class="lede-below">Small, cheerful games about everyday Indian life: gully cricket, the chai stall, the Mumbai local, and the mummy with a chappal. Made to be played in a chai break.</p>
+
+  <div class="stats">
+    <div class="stat"><b>19</b><span>games made</span></div>
+    <div class="stat"><b>12</b><span>coming to Google Play</span></div>
+    <div class="stat"><b>7</b><span>still in the workshop</span></div>
+  </div>
+
+  <h2 id="games">The games</h2>
+  <p class="sub">Every game is made for Android phones. The ones marked "coming soon" are already in testing on Google Play.</p>
+  <div class="grid">
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/bone-breaker.webp)"></span><img src="img/shots/bone-breaker.webp" alt="Bone Breaker: Ragdoll Fall screenshot" loading="lazy" width="360" height="800"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><img class="icon" src="img/icons/bone-breaker.webp" alt="" width="144" height="144"><span>Bone Breaker: Ragdoll Fall</span></h3><p>Fling a ragdoll down the mountain and count the bones. Cartoon chaos, no blood.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/book-cricket.webp)"></span><img src="img/shots/book-cricket.webp" alt="Book Cricket screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Book Cricket</span></h3><p>The classroom classic: flip the pages, score the runs.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/chappal-attack.webp)"></span><img src="img/shots/chappal-attack.webp" alt="Chappal Attack screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Chappal Attack</span></h3><p>Mummy versus five naughty kids. Dodge the flying chappal.</p></div></article>
+<article class="card"><div class="pic wide"><span class="bg" style="background-image:url(img/shots/desi-football.webp)"></span><img src="img/shots/desi-football.webp" alt="Desi Football screenshot" loading="lazy" width="800" height="450"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><img class="icon" src="img/icons/desi-football.webp" alt="" width="144" height="144"><span>Desi Football</span></h3><p>Village football with superpowers, buffaloes and very loose rules.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/gully-cup.webp)"></span><img src="img/shots/gully-cup.webp" alt="Desi Gully Cricket screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><img class="icon" src="img/icons/gully-cup.webp" alt="" width="144" height="144"><span>Desi Gully Cricket</span></h3><p>Street cricket in the gully: bat, bowl and chase, with plenty of desi trash talk.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/tukda-tukda.webp)"></span><img src="img/shots/tukda-tukda.webp" alt="Desi Jigsaw Puzzle screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Desi Jigsaw Puzzle</span></h3><p>Jigsaw puzzles of busy Indian scenes, from Mumbai stations to chai stalls.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/doodle-chess.webp)"></span><img src="img/shots/doodle-chess.webp" alt="Doodle Chess screenshot" loading="lazy" width="360" height="640"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><img class="icon" src="img/icons/doodle-chess.webp" alt="" width="144" height="144"><span>Doodle Chess</span></h3><p>Chess where the doodle pieces come alive and fight it out in cartoon duels.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/doodle-zoo.webp)"></span><img src="img/shots/doodle-zoo.webp" alt="Doodle Zoo screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Doodle Zoo</span></h3><p>Draw your own animals and build a zoo full of doodles.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/leak-patrol.webp)"></span><img src="img/shots/leak-patrol.webp" alt="Leak Patrol screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Leak Patrol</span></h3><p>Turn the pipes before the morning water tanker floods the floor.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/mumbai-local-rush-hour.webp)"></span><img src="img/shots/mumbai-local-rush-hour.webp" alt="Mumbai Local: Rush Hour screenshot" loading="lazy" width="360" height="640"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><img class="icon" src="img/icons/mumbai-local-rush-hour.webp" alt="" width="144" height="144"><span>Mumbai Local: Rush Hour</span></h3><p>Switch the tracks and keep Mumbai&#x27;s local trains running on time.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/pen-fight.webp)"></span><img src="img/shots/pen-fight.webp" alt="Pen Fight screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Pen Fight</span></h3><p>Flick your pen and knock the others off the desk.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/pencil-bridge.webp)"></span><img src="img/shots/pencil-bridge.webp" alt="Pencil Bridge screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge soon">Coming soon to Google Play</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Pencil Bridge</span></h3><p>Draw a bridge with a pencil and hope it holds.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/bharat-map-quest.webp)"></span><img src="img/shots/bharat-map-quest.webp" alt="Bharat Map Quest screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge shop">In the workshop</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Bharat Map Quest</span></h3><p>Mark places on the map of India and test your geography.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/dogesh-bhai.webp)"></span><img src="img/shots/dogesh-bhai.webp" alt="Dogesh Bhai: Gulel Gang screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge shop">In the workshop</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Dogesh Bhai: Gulel Gang</span></h3><p>The Bandar Gang stole Dogesh Bhai&#x27;s biscuits. Load the gulel and get them back.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/doodle-cricket.webp)"></span><img src="img/shots/doodle-cricket.webp" alt="Doodle Cricket screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge shop">In the workshop</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Doodle Cricket</span></h3><p>Hand-drawn cricket on an open ground. Time your tap, hit a six.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/halkat-billa.webp)"></span><img src="img/shots/halkat-billa.webp" alt="Halkat Billa screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge shop">In the workshop</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Halkat Billa</span></h3><p>A tomcat in shades takes the wheel. Dodge the people, wreck everything else.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/mumbai-local-dash.webp)"></span><img src="img/shots/mumbai-local-dash.webp" alt="Mumbai Local Dash screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge shop">In the workshop</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Mumbai Local Dash</span></h3><p>Run along the Mumbai local and deliver the tiffins on time.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/golgappa-rush.webp)"></span><img src="img/shots/golgappa-rush.webp" alt="Pani Puri Rush screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge shop">In the workshop</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Pani Puri Rush</span></h3><p>Run a pani puri cart and keep the rush-hour crowd happy.</p></div></article>
+<article class="card"><div class="pic phone"><span class="bg" style="background-image:url(img/shots/pant-sambhal.webp)"></span><img src="img/shots/pant-sambhal.webp" alt="Pant Sambhal! screenshot" loading="lazy" width="360" height="779"></div><div class="body"><span class="badge shop">In the workshop</span>
+<h3><span class="icon blank" aria-hidden="true"></span><span>Pant Sambhal!</span></h3><p>Keep the mannequin&#x27;s pants up in Seth-ji&#x27;s shop window.</p></div></article>
+  </div>
+
+  <section class="about" id="about">
+    <div class="avatar" aria-hidden="true">KS</div>
+    <div>
+      <h2>About the developer</h2>
+      <p class="role">Karthik Shetty · Chai Break Studios</p>
+      <p>I'm an indie developer making small, cheerful games about everyday Indian life: gully cricket with a tyre for stumps, the chai stall at the corner, the Mumbai local, the mom with a chappal in her hand. Each one is meant to be picked up in a chai break and put down with a smile.</p>
+      <p>Chai Break Studios is just me, building fast with Claude as my co-developer: 19 games so far, and the first ones are on their way to Google Play.</p>
+      <p>Want to test a game before it launches? Write to me at <b>kshetty851@gmail.com</b>.</p>
+      <p class="sig">Karthik</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>© 2026 Chai Break Studios</span>
+    <span><a href="https://kshetty851-bit.github.io/chai-break-privacy/">Privacy policy</a></span>
+  </footer>
+</div>
+<script>
+/* Brush-in only when the page is actually on screen, so the title never waits invisible (previews, background tabs). */
+requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.add('painting')));
+</script>
+</body>
+</html>
