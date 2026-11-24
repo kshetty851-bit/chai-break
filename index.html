@@ -85,29 +85,65 @@ h2{font:800 clamp(28px,4vw,38px)/1.1 var(--sign); color:var(--chai-deep); margin
 .card p{margin:0; color:var(--muted)}
 .btn{margin-top:auto; align-self:flex-start; padding:8px 14px; border-radius:999px; background:var(--chai); color:#fff; text-decoration:none; font-weight:600}
 
-/* About: a page torn from a school notebook, taped to the wall */
-.about{position:relative; margin-top:52px; padding:34px 26px 28px 64px; border-radius:6px; transform:rotate(-.4deg);
+/* About / dev log: a page torn from a school notebook, pinned to the wall. Motion only when allowed; resting state is fully visible. */
+.about{position:relative; margin-top:56px; padding:38px 26px 30px 64px; border-radius:6px; transform:rotate(-.4deg);
   background:repeating-linear-gradient(#fffdf6 0 29px, #d6e4f2 29px 30px), #fffdf6; background-position:0 14px;
-  box-shadow:0 1px 0 #e8dcc6, 0 18px 40px -22px rgba(90,40,10,.55)}
+  box-shadow:0 1px 0 #e8dcc6, 0 22px 44px -22px rgba(90,40,10,.6)}
 .about::before{content:""; position:absolute; top:0; bottom:0; left:46px; width:2px; background:#f0a3a3}
-.about .tape{position:absolute; top:-14px; width:120px; height:30px; background:rgba(255,210,63,.75); box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.about::after{content:""; position:absolute; left:14px; top:60px; bottom:60px; width:14px;
+  background:radial-gradient(circle, #f3e6cf 5px, transparent 5.5px) 0 0/14px 64px repeat-y}
+.about .tape{position:absolute; top:-14px; width:120px; height:30px; background:rgba(255,210,63,.75); box-shadow:0 1px 3px rgba(0,0,0,.12); transition:transform .3s}
 .about .tape.l{left:18%; transform:rotate(-4deg)} .about .tape.r{right:14%; transform:rotate(5deg); background:rgba(255,128,171,.6)}
-.about-grid{display:grid; grid-template-columns:auto minmax(0,1fr); gap:24px; align-items:start}
-.polaroid{width:128px; padding:8px 8px 26px; background:#fff; box-shadow:0 6px 16px rgba(60,30,10,.25); transform:rotate(-5deg); text-align:center}
+.about:hover .tape.l{transform:rotate(-8deg) translateY(-3px)} .about:hover .tape.r{transform:rotate(9deg) translateY(-3px)}
+.about-grid{display:grid; grid-template-columns:auto minmax(0,1fr); gap:26px; align-items:start}
+.pin{position:relative; padding-top:14px}
+.pin::before{content:""; position:absolute; top:0; left:50%; width:16px; height:16px; margin-left:-8px; border-radius:50%; z-index:2;
+  background:radial-gradient(circle at 35% 35%, #ff8a8a, #c62828 70%); box-shadow:0 2px 3px rgba(0,0,0,.35)}
+.polaroid{width:140px; padding:8px 8px 28px; background:#fff; box-shadow:0 8px 18px rgba(60,30,10,.28); transform:rotate(-5deg); transform-origin:50% 0; text-align:center}
 .polaroid .face{display:block; width:100%; aspect-ratio:1; object-fit:cover; background:#fff}
 .polaroid span{display:block; margin-top:6px; font:700 14px var(--hand); color:#5a3e28}
-.about h2{margin:0; font:800 clamp(28px,4vw,36px)/1.1 var(--sign); color:#2a1a0e}
+.about h2{position:relative; display:inline-block; margin:0; font:800 clamp(28px,4vw,38px)/1.1 var(--sign); color:#2a1a0e}
 .about h2 em{font-style:normal; color:#c2577a}
-.about .role{margin:4px 0 14px; font:700 17px var(--hand); color:#a8521b}
+.about h2 .skull{display:inline-block}
+.scribble{position:absolute; left:0; right:0; bottom:-10px; width:100%; height:14px; overflow:visible}
+.scribble path{fill:none; stroke:#e0912f; stroke-width:4; stroke-linecap:round}
+.about .role{margin:10px 0 14px; font:700 17px var(--hand); color:#a8521b}
 .about p{margin:0 0 12px; max-width:64ch; line-height:30px; font-size:17px}
-.about p .hl{background:linear-gradient(transparent 55%, rgba(255,210,63,.75) 55%); padding:0 2px}
-.stickers{display:flex; flex-wrap:wrap; gap:10px; margin:6px 0 16px}
-.sticker{font:800 15px/1 var(--sign); padding:8px 12px; border-radius:12px; color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.15)}
+.about p .hl{background:linear-gradient(rgba(255,210,63,.8),rgba(255,210,63,.8)) 0 85%/100% 45% no-repeat; padding:0 2px}
+.about p .hl.pink{background-image:linear-gradient(rgba(255,128,171,.55),rgba(255,128,171,.55))}
+.stickers{display:flex; flex-wrap:wrap; gap:10px; margin:6px 0 18px}
+.sticker{font:800 15px/1 var(--sign); padding:8px 12px; border-radius:12px; color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.15); transition:transform .2s}
+.sticker:hover{transform:scale(1.1) rotate(0) !important}
 .sticker:nth-child(1){background:#e0912f; transform:rotate(-3deg)} .sticker:nth-child(2){background:#3d6f99; transform:rotate(2deg)}
 .sticker:nth-child(3){background:#4f7a2a; transform:rotate(-1deg)} .sticker:nth-child(4){background:#c2577a; transform:rotate(3deg)}
-.sig{font:700 26px var(--hand); color:#a8521b; margin-top:4px}
+.sticker:nth-child(5){background:#2a1a0e; transform:rotate(-2deg)}
+.patch{margin:18px 0 10px; padding:14px 16px 6px; border:2px dashed #e0b98a; border-radius:12px; background:rgba(255,246,226,.85); max-width:62ch}
+.patch h3{margin:0 0 6px; font:800 18px var(--sign); color:#7a4318}
+.patch ol{list-style:none; margin:0; padding:0}
+.patch li{display:grid; grid-template-columns:62px 1fr; gap:8px; line-height:28px; font-size:15.5px}
+.patch b{font:700 15px var(--hand); color:#c2577a}
+.patch s{color:var(--muted)}
+.sig{font:700 26px var(--hand); color:#a8521b; margin-top:6px}
 .sig small{display:block; font:400 14px var(--body); color:var(--muted)}
-@media (max-width:560px){ .about{padding:30px 18px 24px 40px} .about::before{left:26px} .about-grid{grid-template-columns:1fr} .polaroid{width:110px} }
+@media (max-width:560px){ .about{padding:34px 18px 24px 40px} .about::before{left:26px} .about::after{left:4px} .about-grid{grid-template-columns:1fr} .polaroid{width:118px} .patch li{grid-template-columns:52px 1fr} }
+@media (prefers-reduced-motion:no-preference){
+  .polaroid{animation:swing 4.5s ease-in-out infinite}
+  @keyframes swing{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(-1.5deg)}}
+  .about h2 .skull{animation:wobble 2.4s ease-in-out infinite}
+  @keyframes wobble{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg) scale(1.1)}40%{transform:rotate(10deg)}60%{transform:rotate(0)}}
+  /* Scroll-in sequence: armed by script only, so the page is complete without it */
+  .about.arm .sticker{opacity:0; transform:scale(.3) rotate(-20deg)}
+  .about.arm.in .sticker{opacity:1; transition:opacity .3s, transform .5s cubic-bezier(.3,1.6,.5,1)}
+  .about.arm.in .sticker:nth-child(1){transform:rotate(-3deg); transition-delay:.1s} .about.arm.in .sticker:nth-child(2){transform:rotate(2deg); transition-delay:.2s}
+  .about.arm.in .sticker:nth-child(3){transform:rotate(-1deg); transition-delay:.3s} .about.arm.in .sticker:nth-child(4){transform:rotate(3deg); transition-delay:.4s}
+  .about.arm.in .sticker:nth-child(5){transform:rotate(-2deg); transition-delay:.5s}
+  .about.arm .hl{background-size:0% 45%} .about.arm.in .hl{background-size:100% 45%; transition:background-size .9s ease .6s}
+  .about.arm .scribble path{stroke-dasharray:400; stroke-dashoffset:400} .about.arm.in .scribble path{stroke-dashoffset:0; transition:stroke-dashoffset 1.1s ease .2s}
+  .about.arm .patch li{opacity:0; transform:translateX(-14px)}
+  .about.arm.in .patch li{opacity:1; transform:none; transition:opacity .4s, transform .4s}
+  .about.arm.in .patch li:nth-child(2){transition-delay:.15s} .about.arm.in .patch li:nth-child(3){transition-delay:.3s}
+  .about.arm.in .patch li:nth-child(4){transition-delay:.45s} .about.arm.in .patch li:nth-child(5){transition-delay:.6s} .about.arm.in .patch li:nth-child(6){transition-delay:.75s}
+}
 
 footer{margin-top:36px; padding-top:18px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:8px 20px; justify-content:space-between; color:var(--muted); font-size:14px}
 
@@ -191,16 +227,27 @@ footer{margin-top:36px; padding-top:18px; border-top:1px solid var(--line); disp
   <section class="about" id="about">
     <span class="tape l" aria-hidden="true"></span><span class="tape r" aria-hidden="true"></span>
     <div class="about-grid">
-      <div class="polaroid"><img class="face" src="img/dev-karthik.webp" alt="Cartoon portrait of Karthik" width="360" height="360"><span>me, pre-chai</span></div>
+      <div class="pin"><div class="polaroid"><img class="face" src="img/dev-karthik.webp" alt="Cartoon portrait of Karthik" width="360" height="360"><span>me, pre-chai, post-hope</span></div></div>
       <div>
-        <h2>About the dev <em>(one-man army, no cap)</em></h2>
-        <p class="role">Karthik Shetty · CEO, CTO, intern and chai-wala of Chai Break Studios</p>
-        <div class="stickers"><span class="sticker">20 games</span><span class="sticker">1 human</span><span class="sticker">∞ cutting chai</span><span class="sticker">0 sleep</span></div>
-        <p>Hi, I'm Karthik. I make tiny games about everyday desi life: gully cricket, the chai stall, the Mumbai local, and Mummy's chappal (undefeated, no notes). If you've ever dodged one, congrats, you're basically a beta tester.</p>
-        <p>Chai Break Studios is me, one laptop and Claude as my co-dev. We shipped <span class="hl">20 games in a few weeks</span>, which is either a flex or a cry for help. Jury's still out. My sleep schedule left the group chat ages ago and honestly? Respect.</p>
-        <p>Right now I'm living rent-free in Google Play's review queue. The 14-day testing rule is my villain origin story. If a game crashes, no it didn't, that's a feature. (It's not. Please email me. I'm begging.)</p>
-        <p>Want to play stuff before it drops? Slide into <b>kshetty851@gmail.com</b>. Lowkey need testers, highkey will remember you forever.</p>
-        <p class="sig">Karthik ✌️<small>powered by cutting chai and questionable life choices</small></p>
+        <h2>Dev log <span class="skull" aria-hidden="true">💀</span> <em>(one-man army, zero chill)</em><svg class="scribble" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 40 2, 70 13, 110 7 S 180 3, 220 8 S 280 11, 298 5"/></svg></h2>
+        <p class="role">Karthik Shetty · CEO, CTO, intern, QA, chai-wala and emotional support human of Chai Break Studios</p>
+        <div class="stickers"><span class="sticker">20 games</span><span class="sticker">1 human</span><span class="sticker">∞ cutting chai</span><span class="sticker">0 sleep</span><span class="sticker">3 braincells (shared)</span></div>
+        <p>Hi, I'm Karthik. I make tiny games about desi life: gully cricket, the chai tapri, the Mumbai local, and Mummy's chappal, which has a 100% hit rate and zero cooldown. If you survived one, congrats bestie, you've been <span class="hl">beta-testing since birth</span>.</p>
+        <p>Chai Break Studios is me, one overheating laptop and Claude as my co-dev. We shipped 20 games in a few weeks. Flex or cry for help? <span class="hl pink">Yes.</span> My sleep schedule flatlined in week one and nobody showed up to the funeral. Not even me. I was debugging.</p>
+        <p>Currently in my Google Play review era: submit, refresh, stare at the wall, refresh again. The 14-day tester rule is my villain origin story and I'm still stuck in act one. If a game crashes, no it didn't, that's <span class="hl">lore</span>.</p>
+        <p>Hobbies include arguing with a compiler at 4am and calling it self-care. My will is sorted: the chai goes to the testers, the bugs go to whoever taps "report". The obituary will read: <i>"died doing what he loved: fixing one typo."</i> Delulu? Maybe. Shipping? Always.</p>
+        <div class="patch">
+          <h3>Patch notes: me.exe</h3>
+          <ol>
+            <li><b>v0.1</b><span>Spawned. No tutorial. Zero stars, would not recommend.</span></li>
+            <li><b>v1.0</b><span>Discovered gully cricket. Broke one window. Respawned at Mummy's chappal.</span></li>
+            <li><b>v2.0</b><span>Got a laptop. Touched grass for the last time. RIP grass.</span></li>
+            <li><b>v20.0</b><span>Shipped 20 games. Lost the plot, kept the bugs.</span></li>
+            <li><b>v20.1</b><span>Hotfix: chai intake +200%. <s>Sleep</s> still not found. Won't fix.</span></li>
+          </ol>
+        </div>
+        <p>Want early access? Slide into <b>kshetty851@gmail.com</b>. Lowkey desperate, highkey grateful, and I will literally name a rooster after you. No cap.</p>
+        <p class="sig">Karthik ✌️<small>powered by cutting chai, spite and zero rest days</small></p>
       </div>
     </div>
   </section>
@@ -214,6 +261,17 @@ footer{margin-top:36px; padding-top:18px; border-top:1px solid var(--line); disp
 /* Brush-in only when the page is actually on screen, so the title never waits invisible (previews, background tabs). */
 requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.add('painting')));
 setTimeout(() => document.documentElement.classList.remove('painting'), 2500); // safety net: never leave the title hidden
+/* Dev log scroll-in: armed only when the browser can animate; falls back to fully shown. */
+(() => {
+  const el = document.getElementById('about');
+  if (!el || !('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  requestAnimationFrame(() => {
+    el.classList.add('arm');
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('in'); io.disconnect(); } }, {threshold: .2});
+    io.observe(el);
+    setTimeout(() => el.classList.add('in'), 3000); // fallback: never leave the dev log half-hidden
+  });
+})();
 </script>
 </body>
 </html>
