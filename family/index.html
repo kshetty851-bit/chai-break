@@ -457,9 +457,54 @@ window.dash = (() => {
   @keyframes cb-open{from{opacity:0;transform:scaleY(.96)}to{opacity:1;transform:none}}
   @keyframes cb-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--color-warn) 60%,transparent)}50%{box-shadow:0 0 0 5px transparent}}
 }
+
+/* Motion pass (28 Nov): everything rises in as you scroll, down to the last line. Visible at rest; scroll-linked where supported. */
+.cb-progress{position:fixed; left:0; right:0; top:env(safe-area-inset-top,0px); height:4px; z-index:30; pointer-events:none;
+  background:linear-gradient(90deg,var(--kesar),var(--haldi),var(--gulab),var(--neel)); transform-origin:left; transform:scaleX(0)}
+.cb-sect > h2{position:relative; padding-bottom:6px}
+.cb-sect > h2::after{content:""; position:absolute; left:0; bottom:0; width:72px; height:3px; border-radius:3px;
+  background:linear-gradient(90deg,var(--kesar),var(--gulab)); transform-origin:left}
+.cb-about > h2::after, .cb-about h2::after{content:none}
+.cb-lmap li, .cb-revs li, .cb-shame li, .cb-clock li, .cb-tile, .cb-attn > li{transition:transform .3s var(--ease), box-shadow .3s var(--ease)}
+.cb-lmap li:hover, .cb-revs li:hover, .cb-shame li:hover, .cb-clock li:hover, .cb-attn > li:hover{transform:translateY(-3px); box-shadow:0 12px 26px -16px color-mix(in srgb,#5a2e0e 55%,transparent)}
+.cb-tile:hover{transform:translateY(-4px) rotate(-.4deg)}
+.cb-dlhero{position:relative; overflow:hidden; background-size:220% 220%}
+.cb-dlhero::before{content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%); transform:translateX(-100%)}
+.cb-end{display:grid; justify-items:center; gap:6px; padding:28px 0 10px; text-align:center; color:var(--color-fg-muted)}
+.cb-end .cup{position:relative; font-size:42px; line-height:1}
+.cb-end .cup i{position:absolute; left:50%; top:-10px; width:6px; height:18px; border-radius:6px; background:color-mix(in srgb,var(--color-fg-muted) 35%,transparent); opacity:0}
+.cb-end .cup i:nth-child(2){margin-left:-10px} .cb-end .cup i:nth-child(3){margin-left:8px}
+.cb-end b{font:800 clamp(20px,3vw,26px)/1.2 'CB Sign','Baloo 2',system-ui,sans-serif; color:var(--color-fg)}
+.cb-end span{font:700 16px 'CB Hand','Kalam',cursive}
+.cb-end button{margin-top:6px; font:600 14px var(--font-anthropic-sans); padding:8px 16px; border-radius:999px; border:1px solid var(--chai-line); background:var(--color-panel); color:var(--color-fg); cursor:pointer; transition:transform .2s var(--ease)}
+.cb-end button:hover{transform:translateY(-2px)} .cb-end button:focus-visible{outline:2px solid var(--kesar); outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){
+  @keyframes cb-in{from{opacity:0; transform:translateY(34px) scale(.97)}to{opacity:1; transform:none}}
+  @keyframes cb-pop{from{opacity:0; transform:translateY(22px) scale(.94)}to{opacity:1; transform:none}}
+  @keyframes cb-line{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes cb-prog{to{transform:scaleX(1)}}
+  @keyframes cb-sheen{0%,55%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  @keyframes cb-drift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  @keyframes cb-steam{0%{opacity:0; transform:translateY(4px) scaleY(.6)}30%{opacity:.8}100%{opacity:0; transform:translateY(-22px) scaleY(1.2)}}
+  .cb-dlhero{animation:cb-drift 9s ease-in-out infinite}
+  .cb-dlhero::before{animation:cb-sheen 4.5s ease-in-out infinite}
+  .cb-end .cup i{animation:cb-steam 2.4s ease-out infinite} .cb-end .cup i:nth-child(2){animation-delay:.6s} .cb-end .cup i:nth-child(3){animation-delay:1.2s}
+  @supports (animation-timeline: view()){
+    .cb-progress{animation:cb-prog linear both; animation-timeline:scroll(root)}
+    .cb .cb-sect, .cb .cb-tiles, .cb .cb-vibe, .cb .cb-about, .cb .cb-end, .cb .cb-money, .cb .cb-meter{animation:cb-in linear both; animation-timeline:view(); animation-range:entry 0% cover 22%}
+    .cb .cb-dlhero{animation:cb-in linear both, cb-drift 9s ease-in-out infinite; animation-timeline:view(), auto; animation-range:entry 0% cover 22%, normal}
+    .cb .cb-sect > h2::after{animation:cb-line linear both; animation-timeline:view(); animation-range:entry 30% cover 35%}
+    .cb .cb-grid .cb-card, .cb .cb-tiles .cb-tile, .cb .cb-shame li, .cb .cb-clock li, .cb .cb-lmap li, .cb .cb-revs li,
+    .cb .cb-attn > li, .cb .cb-legend li, .cb .cb-dlhero .per li, .cb .cb-table tbody tr, .cb .cb-patch li, .cb .cb-lmap-todo li{
+      animation:cb-pop linear both; animation-timeline:view(); animation-range:entry 0% entry 90%}
+  }
+  .cb .rv-pop{animation:cb-pop .55s var(--ease) both}
+}
 </style>
 
 <div class="cb enter" id="cb">
+  <div class="cb-progress" aria-hidden="true"></div>
   <header class="cb-hero" id="studio" role="img" aria-label="A Mumbai chai stall at golden hour with kids, a puppy and a pani puri cart; the studio name is painted on the wall">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
       <filter id="cb-paint"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2"/></filter>
@@ -594,6 +639,12 @@ window.dash = (() => {
       </div>
     </div>
   </section>
+  <footer class="cb-end" id="end">
+    <div class="cup" aria-hidden="true">☕<i></i><i></i><i></i></div>
+    <b><span class="fun">You scrolled to the bottom. Touch grass now.</span><span class="plain">That's everything for today.</span></b>
+    <span class="fun">Refreshed every morning with fresh chai and fresh numbers.</span>
+    <button type="button" id="cb-top">Back to the top ↑</button>
+  </footer>
 </div>
 
 <script>
@@ -885,7 +936,15 @@ cb.dl = () => {
   return {rows, total: rows.reduce((a, x) => a + x.n, 0), active: rows.reduce((a, x) => a + (x.active || 0), 0), checked, through};
 };
 cb.dlOf = (r, pr) => r.console_installs != null ? {n: r.console_installs, active: r.console_active} : pr?.installs_total != null ? {n: pr.installs_total, active: pr.active_devices} : null;
-dash.draw('dlnum', (el) => { const d = cb.dl(); el.textContent = d ? d.total.toLocaleString('en-IN') : '—'; });
+dash.draw('dlnum', (el) => {
+  const d = cb.dl(); if (!d) { el.textContent = '—'; return; }
+  const to = d.total, from = cb.counted.dl ?? 0; cb.counted.dl = to;
+  if (!cb.motion() || from === to) { el.textContent = to.toLocaleString('en-IN'); return; }
+  const t0 = performance.now(), dur = 1100;
+  const step = (t) => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = Math.round(from + (to - from) * e).toLocaleString('en-IN'); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+});
 dash.draw('dlsub', (el) => {
   const d = cb.dl(); if (!d) { el.textContent = '—'; return; }
   const fmt = (x) => d3.timeFormat('%-d %b')(new Date(x + 'T00:00:00'));
@@ -897,6 +956,16 @@ dash.draw('dlper', (el) => {
   const {h} = cb, art = cb.art();
   el.replaceChildren(...d.rows.map((x) => h('li', null, cb.icon(art, x.game, true), h('b', null, x.n.toLocaleString('en-IN')), x.game.name)));
 });
+
+
+// Motion pass: back-to-top, and a scroll reveal for browsers without scroll-linked animations (elements stay visible at rest).
+document.getElementById('cb-top')?.addEventListener('click', () => document.getElementById('cb')?.scrollIntoView({behavior: cb.motion() ? 'smooth' : 'auto'}));
+if (cb.motion() && !(window.CSS && CSS.supports('animation-timeline: view()')) && 'IntersectionObserver' in window) {
+  const sel = '.cb-sect, .cb-tiles, .cb-dlhero, .cb-about, .cb-end, .cb-card, .cb-lmap li, .cb-revs li, .cb-shame li, .cb-clock li, .cb-table tbody tr';
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('rv-pop'); io.unobserve(e.target); } }), {rootMargin: '0px 0px -8% 0px'});
+  const watch = () => document.querySelectorAll(sel).forEach((el) => { if (!el.dataset.rv && el.getBoundingClientRect().top > innerHeight) { el.dataset.rv = 1; io.observe(el); } });
+  watch(); new MutationObserver(watch).observe(document.getElementById('cb'), {childList: true, subtree: true});
+}
 
 dash.draw('vibe', (el) => {
   const s = dash.data('summary'), m = dash.data('money_total');
