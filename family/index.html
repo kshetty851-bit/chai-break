@@ -12,24 +12,25 @@ html,body{margin:0;background:#fffaf1}
   font-family:var(--font-anthropic-sans);color:var(--color-fg)}
 /* Family edition: nothing that needs the owner's Play Console login */
 #dash-root a[href*="play.google.com/console"], #dash-root .cb-revs .rp:not(.done), #dash-root .cb-revs .draft{display:none!important}
-#fam-lock{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,#ffe0b0,#fffaf1 60%,#ffd6e4);z-index:50;font-family:-apple-system,system-ui,sans-serif;color:#2a1a0e;padding:16px}
-#fam-form{width:min(360px,100%);background:#fff;border:1px solid #efdcc4;border-radius:20px;padding:28px 24px;text-align:center;box-shadow:0 20px 50px -25px rgba(110,61,23,.6)}
-#fam-form h1{margin:6px 0 4px;font-size:24px} #fam-form p{margin:0 0 16px;color:#6e5643;font-size:14px}
-.fam-cup{font-size:40px}
-#fam-pin{width:100%;box-sizing:border-box;font-size:22px;letter-spacing:.3em;text-align:center;padding:12px;border:1px solid #e8cfae;border-radius:12px;margin-bottom:10px}
-.fam-rem{display:block;font-size:13px;color:#6e5643;margin-bottom:14px}
-#fam-form button{width:100%;font:600 16px system-ui;padding:12px;border:0;border-radius:12px;background:#a8642a;color:#fff;cursor:pointer}
-#fam-msg{margin:12px 0 0!important;min-height:1.2em}
+#revenue.fam-locked > :not(h2):not(.fam-rlock){filter:blur(7px);opacity:.5;pointer-events:none;user-select:none}
+.fam-rlock{display:grid;gap:8px;max-width:420px;margin:6px 0 14px;padding:16px 18px;border-radius:16px;background:#fff;border:1px solid #efdcc4;box-shadow:0 14px 30px -20px rgba(110,61,23,.6)}
+.fam-rlock span{color:#6e5643;font-size:14px} .fam-rlock .row{display:flex;gap:8px}
+.fam-rlock input[type=password]{flex:1;min-width:0;font-size:20px;letter-spacing:.25em;text-align:center;padding:10px;border:1px solid #e8cfae;border-radius:12px}
+.fam-rlock button{font:600 15px system-ui;padding:10px 18px;border:0;border-radius:12px;background:#a8642a;color:#fff;cursor:pointer}
+.fam-rlock label{font-size:13px;color:#6e5643} .fam-rlock .msg{min-height:1.2em}
 </style><script>
 // Stand-in for the claude.ai dashboard runtime: dash.draw / dash.calc / dash.data over one decrypted JSON.
 window.dash = (() => {
   const draws = new Map(), calcs = new Map(), made = new Map(); let D = null;
   const data = (n) => {
     if (!D) return {status: 'loading', data: null};
+    if (n === 'finance' || n === 'costs') { if (!(n in D)) return {status: 'loading', data: null}; }
     if (n in D) return {status: 'ok', data: D[n], meta: (D.__meta || {})[n] || []};
     const c = calcs.get(n);
     if (!c) return {status: 'error', data: null};
-    try { return {status: 'ok', data: c.fn(...c.inputs.map((i) => data(i).data || []))}; }
+    const ins = c.inputs.map(data);
+    if (ins.some((x) => x.status !== 'ok')) return {status: 'loading', data: null};  // e.g. revenue still PIN-locked
+    try { return {status: 'ok', data: c.fn(...ins.map((x) => x.data))}; }
     catch (e) { console.error(n, e); return {status: 'error', data: null}; }
   };
   const run = (n) => {
@@ -42,20 +43,10 @@ window.dash = (() => {
     });
   };
   return {draw: (n, def) => { if (def) draws.set(n, def); run(n); }, calc: (n, c) => { calcs.set(n, c); }, data,
-          start: (d) => { D = d; for (const n of draws.keys()) run(n); }};
+          start: (d) => { D = {...(D || {}), ...d, __meta: {...((D || {}).__meta || {}), ...(d.__meta || {})}}; for (const n of draws.keys()) run(n); }};
 })();
-</script></head><body><div id="fam-lock">
-  <form id="fam-form" autocomplete="off">
-    <div class="fam-cup">☕</div>
-    <h1>Chai Break Studios</h1>
-    <p>Family edition. Enter the PIN Karthik shared with you.</p>
-    <input id="fam-pin" type="password" inputmode="numeric" autocomplete="off" aria-label="PIN" placeholder="PIN" required>
-    <label class="fam-rem"><input type="checkbox" id="fam-remember" checked> Remember on this device</label>
-    <button type="submit">Open dashboard</button>
-    <p id="fam-msg" role="status"></p>
-  </form>
-</div>
-<script>
+</script></head><body><script>
+// Everything loads openly from public.json; only revenue (finance + costs) sits in data.enc behind the PIN.
 (() => {
   const ITER = 600000;
   const unlock = async (pin) => {
@@ -66,23 +57,34 @@ window.dash = (() => {
     const key = await crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-CBC', false, ['decrypt']);
     return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name: 'AES-CBC', iv: bits.slice(32)}, key, ct)));
   };
-  const lock = document.getElementById('fam-lock'), msg = document.getElementById('fam-msg');
-  const go = async (pin, quiet) => {
-    msg.textContent = quiet ? '' : 'Opening…';
-    try {
-      const d = await unlock(pin);
-      if (document.getElementById('fam-remember').checked) { try { localStorage.setItem('fam-pin', pin); } catch (e) {} }
-      lock.remove(); document.getElementById('dash-root').hidden = false; dash.start(d);
-    } catch (e) {
-      try { localStorage.removeItem('fam-pin'); } catch (e2) {}
-      msg.textContent = quiet ? '' : 'Wrong PIN. Try again.';
-    }
+  const boot = async () => {
+    dash.start(await (await fetch('public.json', {cache: 'no-store'})).json());
+    const sec = document.getElementById('revenue'); if (!sec) return;
+    sec.classList.add('fam-locked');
+    const box = document.createElement('form'); box.className = 'fam-rlock'; box.autocomplete = 'off';
+    box.innerHTML = '<b>🔒 Revenue is locked</b><span>Enter the PIN Karthik shared with you.</span>' +
+      '<div class="row"><input type="password" inputmode="numeric" placeholder="PIN" aria-label="PIN" required><button type="submit">Unlock</button></div>' +
+      '<label><input type="checkbox" checked> Remember on this device</label><span class="msg" role="status"></span>';
+    sec.querySelector('h2').after(box);
+    const msg = box.querySelector('.msg'), remember = box.querySelector('[type=checkbox]');
+    const go = async (pin, quiet) => {
+      if (!quiet) msg.textContent = 'Opening…';
+      try {
+        dash.start(await unlock(pin));
+        if (remember.checked) { try { localStorage.setItem('fam-pin', pin); } catch (e) {} }
+        sec.classList.remove('fam-locked'); box.remove();
+      } catch (e) {
+        try { localStorage.removeItem('fam-pin'); } catch (e2) {}
+        msg.textContent = quiet ? '' : 'Wrong PIN. Try again.';
+      }
+    };
+    box.addEventListener('submit', (e) => { e.preventDefault(); go(box.querySelector('input').value.trim()); });
+    let saved = null; try { saved = localStorage.getItem('fam-pin'); } catch (e) {}
+    if (saved) go(saved, true);
   };
-  document.getElementById('fam-form').addEventListener('submit', (e) => { e.preventDefault(); go(document.getElementById('fam-pin').value.trim()); });
-  let saved = null; try { saved = localStorage.getItem('fam-pin'); } catch (e) {}
-  if (saved) go(saved, true);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
-</script><div id="dash-root" hidden>
+</script><div id="dash-root">
 <style>
 /* Layout: chai-stall ledger. Steaming hero band, count-up tiles, release pipeline, one attention card per game, masala-coloured game covers with inline detail, full ledger. */
 #dash-root{--dash-gutter:0}
@@ -904,8 +906,8 @@ dash.draw('vibe', (el) => {
   const live = (st.status === 'ok' ? st.data : []).filter((r) => r.stage === 'production-live').reduce((a, r) => a + r.games, 0);
   const net = m.status === 'ok' && m.data?.[0] ? m.data[0].net : 0, cur = m.data?.[0]?.currency;
   el.textContent = cb.serious
-    ? `${inRev} in Google review · ${live} live on Play · ${cb.cur(net, cur)} kept · ${x.web_only} web-only · ${x.total} games`
-    : `${inRev} games in Google's review jail, ${live} live, ${cb.cur(net, cur)} earned, 1 dev running on fumes. ${net > 0 ? 'Not rich, but the chai is paid for. W.' : "Mid, but we move."}`;
+    ? `${inRev} in Google review · ${live} live on Play · ${m.status === 'ok' ? cb.cur(net, cur) : '🔒'} kept · ${x.web_only} web-only · ${x.total} games`
+    : `${inRev} games in Google's review jail, ${live} live, ${m.status === 'ok' ? cb.cur(net, cur) : '🔒'} earned, 1 dev running on fumes. ${net > 0 ? 'Not rich, but the chai is paid for. W.' : "Mid, but we move."}`;
 });
 
 dash.draw('roast', (el) => {
@@ -923,7 +925,7 @@ dash.draw('roast', (el) => {
     stale ? `${stale.name} hasn't been touched in ${cb.days(stale.last_local_change)} days. Check if it's still breathing.` : null,
     `${act} games have red flags. You're collecting them like Pokémon.`,
     `Google has ${inRev} of your games on read. Situationship behaviour.`,
-    net > 0 ? `You earned ${cb.cur(net, m.data[0].currency)}. Don't spend it all on chai. (You will.)` : `${total} games, ₹0 earned. Character development.`,
+    m.status !== 'ok' ? `${total} games. The money talk is PIN-locked 🔒` : net > 0 ? `You earned ${cb.cur(net, m.data[0].currency)}. Don't spend it all on chai. (You will.)` : `${total} games, ₹0 earned. Character development.`,
     `Your commit messages at 4am are a cry for help and we all see it.`,
   ].filter(Boolean);
   const day = Math.floor(Date.now() / 864e5);
