@@ -930,7 +930,7 @@ cb.dl = () => {
   const rows = g.data.map((r) => { const pr = play.get(r.package) || {};
     const live = r.console_installs != null;
     return {game: r, n: live ? r.console_installs : pr.installs_total, active: live ? r.console_active : pr.active_devices, live, pr};
-  }).filter((x) => x.n != null).sort((a, b) => b.n - a.n);
+  }).filter((x) => x.n != null && x.pr.store_public).sort((a, b) => b.n - a.n);  // only games live on the store; testing installs are testers
   const checked = rows.filter((x) => x.live).map((x) => x.game.console_checked).filter(Boolean).sort().pop();
   const through = rows.filter((x) => !x.live).map((x) => x.pr.installs_through).filter(Boolean).sort().pop();
   return {rows, total: rows.reduce((a, x) => a + x.n, 0), active: rows.reduce((a, x) => a + (x.active || 0), 0), checked, through};
@@ -1061,7 +1061,7 @@ dash.draw('grid', (el) => {
         r.version_name ? h('span', {class: 'ver'}, 'v', h('span', {'data-source': 'games', 'data-field': 'version_name', 'data-where': where}, r.version_name),
           ' · code ', h('span', {'data-source': 'games', 'data-field': 'version_code', 'data-where': where}, r.version_code)) : null,
         money.get(r.slug) ? h('span', {class: 'cb-earn'}, 'Kept ' + cb.cur(money.get(r.slug).net, money.get(r.slug).currency) + ' · profit ' + cb.cur(money.get(r.slug).profit, money.get(r.slug).currency)) : null,
-        cb.dlOf(r, pr) ? h('span', {class: 'cb-dl'}, `📲 ${cb.dlOf(r, pr).n} downloads · ${cb.dlOf(r, pr).active ?? '?'} active`) : null,
+        cb.dlOf(r, pr) ? (pr?.store_public ? h('span', {class: 'cb-dl'}, `📲 ${cb.dlOf(r, pr).n} downloads · ${cb.dlOf(r, pr).active ?? '?'} active`) : h('span', {class: 'cb-hint'}, `🧪 ${cb.dlOf(r, pr).n} tester installs`)) : null,
         cb.reviewsOf(r.package).length ? h('span', {class: 'cb-hint'}, `⭐ ${cb.reviewsOf(r.package).length} reviews` + (cb.reviewsOf(r.package).some((v) => !v.replied) ? ' · reply pending' : '')) : null,
         cb.storeLine(cb.launchesOf(r.slug)) ? h('span', {class: 'cb-hint'}, '🛒 ' + cb.storeLine(cb.launchesOf(r.slug))) : null,
         flags ? h('span', {class: 'cb-flag'}, flags === 1 ? '1 thing needs action' : flags + ' things need action') : null,
