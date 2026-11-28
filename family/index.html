@@ -11,7 +11,7 @@ html,body{margin:0;background:#fffaf1}
   --font-anthropic-serif:Georgia,'Times New Roman',serif;
   font-family:var(--font-anthropic-sans);color:var(--color-fg)}
 /* Family edition: nothing that needs the owner's Play Console login */
-#dash-root a[href*="play.google.com/console"], #dash-root .cb-revs .rp:not(.done), #dash-root .cb-revs .draft{display:none!important}
+#dash-root #cb-serious, #dash-root a[href*="play.google.com/console"], #dash-root .cb-revs .rp:not(.done), #dash-root .cb-revs .draft{display:none!important}
 #revenue.fam-locked > :not(h2):not(.fam-rlock){filter:blur(7px);opacity:.5;pointer-events:none;user-select:none}
 .fam-rlock{display:grid;gap:8px;max-width:420px;margin:6px 0 14px;padding:16px 18px;border-radius:16px;background:#fff;border:1px solid #efdcc4;box-shadow:0 14px 30px -20px rgba(110,61,23,.6)}
 .fam-rlock span{color:#6e5643;font-size:14px} .fam-rlock .row{display:flex;gap:8px}
@@ -62,20 +62,20 @@ window.dash = (() => {
     const sec = document.getElementById('revenue'); if (!sec) return;
     sec.classList.add('fam-locked');
     const box = document.createElement('form'); box.className = 'fam-rlock'; box.autocomplete = 'off';
-    box.innerHTML = '<b>🔒 Revenue is locked</b><span>Enter the PIN Karthik shared with you.</span>' +
-      '<div class="row"><input type="password" inputmode="numeric" placeholder="PIN" aria-label="PIN" required><button type="submit">Unlock</button></div>' +
-      '<label><input type="checkbox" checked> Remember on this device</label><span class="msg" role="status"></span>';
+    box.innerHTML = '<b>🔒 The bag is in witness protection</b><span>No PIN, no tea. This money is more private than the dev’s sleep schedule (deceased).</span>' +
+      '<div class="row"><input type="password" inputmode="numeric" placeholder="PIN" aria-label="PIN" required><button type="submit">Let me in fr</button></div>' +
+      '<label><input type="checkbox" checked> Remember me (trust issues: off)</label><span class="msg" role="status"></span>';
     sec.querySelector('h2').after(box);
     const msg = box.querySelector('.msg'), remember = box.querySelector('[type=checkbox]');
     const go = async (pin, quiet) => {
-      if (!quiet) msg.textContent = 'Opening…';
+      if (!quiet) msg.textContent = 'Cooking…';
       try {
         dash.start(await unlock(pin));
         if (remember.checked) { try { localStorage.setItem('fam-pin', pin); } catch (e) {} }
         sec.classList.remove('fam-locked'); box.remove();
       } catch (e) {
         try { localStorage.removeItem('fam-pin'); } catch (e2) {}
-        msg.textContent = quiet ? '' : 'Wrong PIN. Try again.';
+        msg.textContent = quiet ? '' : 'Wrong PIN. Caught in 4K. Try again, bestie.';
       }
     };
     box.addEventListener('submit', (e) => { e.preventDefault(); go(box.querySelector('input').value.trim()); });
@@ -465,15 +465,15 @@ window.dash = (() => {
       <filter id="cb-paint"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2"/></filter>
     </svg>
     <div class="cb-wall">
-      <p class="cb-eyebrow">Studio dashboard · family edition</p>
+      <p class="cb-eyebrow">Studio dashboard · fam edition, no cap</p>
       <h1 class="cb-title">Chai Break <span class="b">Studios</span></h1>
-      <p class="cb-lede" data-read lang="en">Every game the studio has made, where it stands on Google Play and where to find it. Versions come from each project folder, release status from the read-only Play connection and your release notes.</p>
+      <p class="cb-lede" data-read lang="en">Every game one sleep-deprived dev has birthed, where it's at on Google Play and where to find it. Real numbers, zero cap. Touching grass not included.</p>
     </div>
   </header>
-  <p class="cb-lede-below" lang="en">Every game the studio has made, where it stands on Google Play and where to find it. Versions come from each project folder, release status from the read-only Play connection and your release notes.</p>
+  <p class="cb-lede-below" lang="en">Every game one sleep-deprived dev has birthed, where it's at on Google Play and where to find it. Real numbers, zero cap. Touching grass not included.</p>
 
   <div class="cb-modebar"><button class="cb-chip" id="cb-party" type="button" title="Preview the launch-day confetti">🎉 Launch preview</button><button class="cb-chip" id="cb-serious" type="button" aria-pressed="false">Serious mode</button></div>
-  <p class="cb-night-note">Why are you awake? Go to sleep. (Ok, one more build.)</p>
+  <p class="cb-night-note">Why are you awake? The dev isn't either. We're all cooked.</p>
   <section class="cb-vibe" id="vibe" aria-live="polite">
     <p><span class="lbl"><span class="fun">Vibe check</span><span class="plain">Today</span></span><span class="line" data-draw="vibe" data-source="summary money_total">—</span></p>
     <p class="roast"><span class="lbl">Daily roast 🔥</span><span data-draw="roast" data-source="games play money_total">—</span></p>
@@ -483,27 +483,27 @@ window.dash = (() => {
 
 
   <section class="cb-dlhero" id="downloads" aria-label="Downloads">
-    <div class="big"><span class="k"><span class="fun">Downloads 📲</span><span class="plain">Downloads</span></span><b data-draw="dlnum" data-source="games play">—</b><span class="s" data-draw="dlsub" data-source="games play">—</span></div>
+    <div class="big"><span class="k"><span class="fun">Downloads 📲 (real ones)</span><span class="plain">Downloads</span></span><b data-draw="dlnum" data-source="games play">—</b><span class="s" data-draw="dlsub" data-source="games play">—</span></div>
     <ul class="per" data-draw="dlper" data-source="games play art"></ul>
   </section>
 
   <section class="cb-tiles" id="totals" aria-label="Studio totals">
-    <div class="cb-tile" style="--tone:var(--chai)"><i class="dot"></i><span class="k">Games</span><b class="v" data-draw="sum" data-source="summary" data-field="total" data-row="0">—</b><span class="s">in the catalogue</span></div>
-    <div class="cb-tile" style="--tone:var(--elaichi)"><i class="dot"></i><span class="k">On Google Play</span><b class="v" data-draw="sum" data-source="summary" data-field="on_play" data-row="0">—</b><span class="s" data-draw="sum" data-source="summary" data-field="play_split" data-row="0">live, testing or in review</span></div>
-    <div class="cb-tile" style="--tone:var(--color-warn)"><i class="dot"></i><span class="k">In production review</span><b class="v" data-draw="sum" data-source="summary" data-field="in_review" data-row="0">—</b><span class="s">waiting on Google</span></div>
-    <div class="cb-tile" style="--tone:var(--neel)"><i class="dot"></i><span class="k">Web demo only</span><b class="v" data-draw="sum" data-source="summary" data-field="web_only" data-row="0">—</b><span class="s">no Android build yet</span></div>
-    <div class="cb-tile" style="--tone:var(--kesar)"><i class="dot"></i><span class="k">Play API</span><b class="v small" data-draw="sum" data-source="summary" data-field="play_api" data-row="0">—</b><span class="s">last sync <span data-draw="sum" data-source="summary" data-field="play_synced" data-row="0">—</span></span></div>
+    <div class="cb-tile" style="--tone:var(--chai)"><i class="dot"></i><span class="k">Games dropped</span><b class="v" data-draw="sum" data-source="summary" data-field="total" data-row="0">—</b><span class="s">and he still has no social life</span></div>
+    <div class="cb-tile" style="--tone:var(--elaichi)"><i class="dot"></i><span class="k">On the Play Store</span><b class="v" data-draw="sum" data-source="summary" data-field="on_play" data-row="0">—</b><span class="s" data-draw="sum" data-source="summary" data-field="play_split" data-row="0">live, testing or in review jail</span></div>
+    <div class="cb-tile" style="--tone:var(--color-warn)"><i class="dot"></i><span class="k">Google review jail</span><b class="v" data-draw="sum" data-source="summary" data-field="in_review" data-row="0">—</b><span class="s">left on read by Google</span></div>
+    <div class="cb-tile" style="--tone:var(--neel)"><i class="dot"></i><span class="k">Browser-only babies</span><b class="v" data-draw="sum" data-source="summary" data-field="web_only" data-row="0">—</b><span class="s">no app yet, still in their villain arc</span></div>
+    <div class="cb-tile" style="--tone:var(--kesar)"><i class="dot"></i><span class="k">Google link</span><b class="v small" data-draw="sum" data-source="summary" data-field="play_api" data-row="0">—</b><span class="s">last sync <span data-draw="sum" data-source="summary" data-field="play_synced" data-row="0">—</span></span></div>
   </section>
 
   <section class="cb-sect" id="revenue">
-    <h2>Revenue &amp; profit <span class="cb-state" data-draw="finstate" data-source="finance">—</span></h2>
-    <p class="cb-sub">From Google Play's monthly earnings reports: sales, minus Google's fee, refunds and tax, is what you keep. Profit then subtracts the costs you list in <code>costs.json</code>. Ad revenue from AdMob is not included yet.</p>
+    <h2>The bag 💸 <span class="cb-state" data-draw="finstate" data-source="finance">—</span></h2>
+    <p class="cb-sub">Straight from Google's receipts: sales, minus Google's cut (they eat first, always), refunds and tax. Profit = what's left after the costs. AdMob money not counted yet, it's still loading like my will to live.</p>
     <div class="cb-money" aria-label="Money totals">
-      <div class="cb-tile" style="--tone:var(--elaichi)"><i class="dot"></i><span class="k">You kept, all time</span><b class="v" data-draw="fin" data-source="money_total" data-field="net" data-row="0">—</b><span class="s">after Google's fee and refunds</span></div>
-      <div class="cb-tile" style="--tone:var(--haldi)"><i class="dot"></i><span class="k">This month</span><b class="v" data-draw="fin" data-source="money_total" data-field="net_month" data-row="0">—</b><span class="s"><span data-draw="finmonth" data-source="money_total" data-field="month" data-row="0">—</span></span></div>
-      <div class="cb-tile" style="--tone:var(--gulab)"><i class="dot"></i><span class="k">Google's fees</span><b class="v" data-draw="fin" data-source="money_total" data-field="google_fee" data-row="0">—</b><span class="s">all time</span></div>
-      <div class="cb-tile" style="--tone:var(--masala)"><i class="dot"></i><span class="k">Your costs</span><b class="v" data-draw="fin" data-source="money_total" data-field="costs" data-row="0">—</b><span class="s">from costs.json</span></div>
-      <div class="cb-tile" style="--tone:var(--neel)"><i class="dot"></i><span class="k">Profit</span><b class="v" data-draw="fin" data-source="money_total" data-field="profit" data-row="0">—</b><span class="s">kept minus costs</span></div>
+      <div class="cb-tile" style="--tone:var(--elaichi)"><i class="dot"></i><span class="k">Kept, all time</span><b class="v" data-draw="fin" data-source="money_total" data-field="net" data-row="0">—</b><span class="s">after Google took its rizz tax</span></div>
+      <div class="cb-tile" style="--tone:var(--haldi)"><i class="dot"></i><span class="k">This month's bag</span><b class="v" data-draw="fin" data-source="money_total" data-field="net_month" data-row="0">—</b><span class="s"><span data-draw="finmonth" data-source="money_total" data-field="month" data-row="0">—</span></span></div>
+      <div class="cb-tile" style="--tone:var(--gulab)"><i class="dot"></i><span class="k">Google's cut</span><b class="v" data-draw="fin" data-source="money_total" data-field="google_fee" data-row="0">—</b><span class="s">the landlord always wins</span></div>
+      <div class="cb-tile" style="--tone:var(--masala)"><i class="dot"></i><span class="k">Money yeeted</span><b class="v" data-draw="fin" data-source="money_total" data-field="costs" data-row="0">—</b><span class="s">on dev accounts and vibes</span></div>
+      <div class="cb-tile" style="--tone:var(--neel)"><i class="dot"></i><span class="k">Actual profit</span><b class="v" data-draw="fin" data-source="money_total" data-field="profit" data-row="0">—</b><span class="s">kept minus yeeted. Be strong.</span></div>
     </div>
     <div class="cb-meter" id="chai-meter">
       <div class="cb-glass" data-draw="glass" data-source="money_total" role="img" aria-label="Chai fund glass"><i></i></div>
@@ -535,8 +535,8 @@ window.dash = (() => {
   </section>
 
   <section class="cb-sect" id="games">
-    <h2>Games</h2>
-    <p class="cb-sub">Tap a game for versions, Play tracks and links.</p>
+    <h2>The whole lineup 🎮</h2>
+    <p class="cb-sub">Tap a game to see the full lore: downloads, reviews, where it's live, all the tea.</p>
     <div class="cb-chips" role="group" aria-label="Filter games">
       <button class="cb-chip" type="button" data-filter="all" aria-pressed="true">All <span class="n" data-draw="chipn" data-k="all"></span></button>
       <button class="cb-chip" type="button" data-filter="play" aria-pressed="false">On Play <span class="n" data-draw="chipn" data-k="play"></span></button>
@@ -548,8 +548,8 @@ window.dash = (() => {
   </section>
 
   <section class="cb-sect" id="ledger">
-    <h2>Ledger</h2>
-    <p class="cb-sub">Every game in one table. Versions are read from each project's Android build file at scan time.</p>
+    <h2>The receipts 🧾</h2>
+    <p class="cb-sub">Every game in one table, for the nerds. Ratio'd by nobody.</p>
     <div class="cb-tablewrap">
       <table class="cb-table" data-source="games" data-row-key="slug">
         <thead><tr>
@@ -615,7 +615,7 @@ window.cb = (() => {
     'in-development': ['Building', 'dev', 'Cooking'],
     'unknown': ['Unknown', 'unknown', 'Lost the plot'],
   };
-  let serious = false; try { serious = localStorage.getItem('cb-serious') === '1'; } catch (e) {}
+  let serious = false;  // family edition: always fun mode
   const TONES = ['--chai', '--kesar', '--elaichi', '--gulab', '--neel', '--haldi', '--masala'];
   const tone = (s) => { let x = 0; for (const c of String(s)) x = (x * 31 + c.charCodeAt(0)) >>> 0; return `var(${TONES[x % TONES.length]})`; };
   const initials = (n) => String(n).replace(/[^A-Za-z ]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
@@ -719,7 +719,7 @@ cb.attnView = (r) => {
   const {h} = cb, items = String(r.attention || '').split(' | ').filter(Boolean);
   if (!items.length) return null;
   const bad = r.play_status === 'unknown' || items.some((a) => /temporary|unknown/i.test(a));
-  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Needs your attention' : 'Your problems 🔥'),
+  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Needs your attention' : 'Ick list 🔥'),
     h('ul', {class: 'cb-attn'}, h('li', {class: bad ? 'bad' : null}, cb.serious ? null : h('span', {class: 'rank', 'aria-hidden': 'true'}, bad ? '💀' : items.length > 1 ? '🔥' : '👀'),
       h('div', {class: 'body'}, h('ul', null, items.map((a) => h('li', null, a)))))));
 };
@@ -822,7 +822,7 @@ cb.launchView = (rows) => {
   const asof = rows.map((r) => r.as_of).filter(Boolean).sort().pop();
   const card = (r) => {
     const st = cb.LST[r.status] || [r.status, r.status], url = cb.safeUrl(r.link), mine = r.waiting_on === 'You';
-    const on = !r.waiting_on || r.waiting_on === 'none' ? (cb.serious ? 'Nothing pending' : 'Chilling ✨') : (mine ? (cb.serious ? 'Waiting on you' : '👑 Waiting on you') : `Waiting on ${r.waiting_on}`);
+    const on = !r.waiting_on || r.waiting_on === 'none' ? (cb.serious ? 'Nothing pending' : 'Vibing, nothing to do ✨') : (mine ? (cb.serious ? 'Waiting on you' : '👑 Waiting on the dev (pray)') : `Waiting on ${r.waiting_on}`);
     return h('li', {class: order.includes(r.status) ? r.status : ''},
       h('div', {class: 'top'}, h('span', {class: 'pf'}, r.platform), h('span', {class: 'st'}, st[cb.serious ? 0 : 1])),
       r.metric && r.metric !== '-' ? h('span', {class: 'm'}, r.metric) : null, h('span', {class: 'd'}, r.detail || ''),
@@ -831,11 +831,11 @@ cb.launchView = (rows) => {
   };
   const groups = cb.KINDS.map(([k, plain, fun]) => [k, cb.serious ? plain : fun, rows.filter((r) => cb.kindOf(r) === k).sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status))]).filter((g) => g[2].length);
   const chip = (k, label) => { const g = rows.filter((r) => cb.kindOf(r) === k); return g.length ? h('li', null, `${g.filter((r) => r.status === 'live').length} of ${g.length} ${label} live`) : null; };
-  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Where it is launched' : 'Where it is launched 🗺️'),
+  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Where it is launched' : 'Where it\'s live 🗺️ (world domination speedrun)'),
     h('ul', {class: 'cb-lmap-sum'}, chip('store', 'game stores'), chip('web', 'web'), chip('social', 'social'),
       h('li', null, (cb.serious ? '' : '👑 ') + `${you.length} waiting on you`)),
     ...groups.map(([k, label, list]) => h('div', {class: 'cb-lgroup'}, h('h4', null, label), h('ul', {class: 'cb-lmap'}, ...list.map(card)))),
-    you.length ? h('ol', {class: 'cb-lmap-todo'}, h('b', {style: 'margin-left:-18px'}, cb.serious ? 'Your to-dos' : 'Your homework, owner-ji 📝'),
+    you.length ? h('ol', {class: 'cb-lmap-todo'}, h('b', {style: 'margin-left:-18px'}, cb.serious ? 'Your to-dos' : 'Dev\'s homework (he will procrastinate) 📝'),
       ...you.map((r) => h('li', null, h('b', null, r.platform + ': '), r.detail))) : null,
     asof ? h('p', {class: 'cb-lmap-asof'}, `Kept by hand in launches.json · last updated ${d3.timeFormat('%-d %b %Y')(new Date(asof + 'T00:00:00'))}`) : null);
 };
@@ -858,7 +858,7 @@ cb.reviewView = (r, pr, revs) => {
     pr?.store_downloads ? `${pr.store_downloads} downloads` : null,
     `${revs.length} written review${revs.length === 1 ? '' : 's'}` + (avg != null ? `, avg ${avg.toFixed(1)}★` : ''),
     open ? `${open} not replied` : revs.length ? 'all replied' : null].filter(Boolean).join(' · ');
-  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Ratings and reviews' : 'What the people are saying ⭐'),
+  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Ratings and reviews' : 'What the people are saying ⭐ (no haters yet, suspicious)'),
     h('p', {class: 'cb-xline'}, line),
     revs.length ? h('ul', {class: 'cb-revs'}, ...revs.map((v) => h('li', {class: v.stars <= 2 ? 'low' : ''}, cb.stars(v.stars),
       v.text ? h('q', null, v.text) : h('span', {class: 'meta'}, 'Stars only, no words.'),
@@ -890,7 +890,7 @@ dash.draw('dlsub', (el) => {
   const d = cb.dl(); if (!d) { el.textContent = '—'; return; }
   const fmt = (x) => d3.timeFormat('%-d %b')(new Date(x + 'T00:00:00'));
   const src = [d.checked ? `live from Play Console, checked ${fmt(d.checked)}` : null, d.through ? `Play reports up to ${fmt(d.through)}` : null].filter(Boolean).join(' · ');
-  el.textContent = `${d.active} active devices · ${src}` + (cb.serious ? '' : ' (every download counts, bestie)');
+  el.textContent = `${d.active} active devices · ${src}` + (cb.serious ? '' : ' (every download is a W, we take those)');
 });
 dash.draw('dlper', (el) => {
   const d = cb.dl(); if (!d) { el.replaceChildren(); return; }
