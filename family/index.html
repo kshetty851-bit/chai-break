@@ -1,0 +1,1178 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Chai Break Studios · Family</title><script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script><style>
+:root{color-scheme:light}
+html,body{margin:0;background:#fffaf1}
+#dash-root{max-width:1400px;margin:0 auto;padding:16px;
+  --color-bg:#fffaf1;--color-panel:#fff;--color-fg:#2a1a0e;--color-fg-muted:#6e5643;--color-border-line:#efdcc4;
+  --color-ok:#2e9d4f;--color-warn:#e07b1f;--color-bad:#d64545;
+  --cds-gap-md:12px;--cds-gap-lg:18px;--cds-gap-xl:28px;--cds-pad-md:12px;--cds-pad-lg:18px;--cds-radius:10px;
+  --cds-font-size-caption:13px;--cds-font-size-body:15px;--cds-font-size-heading:20px;--cds-font-weight-medium:600;
+  --cds-ease-out:cubic-bezier(.2,.8,.2,1);
+  --font-anthropic-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
+  --font-anthropic-serif:Georgia,'Times New Roman',serif;
+  font-family:var(--font-anthropic-sans);color:var(--color-fg)}
+/* Family edition: nothing that needs the owner's Play Console login */
+#dash-root a[href*="play.google.com/console"], #dash-root .cb-revs .rp:not(.done), #dash-root .cb-revs .draft{display:none!important}
+#fam-lock{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,#ffe0b0,#fffaf1 60%,#ffd6e4);z-index:50;font-family:-apple-system,system-ui,sans-serif;color:#2a1a0e;padding:16px}
+#fam-form{width:min(360px,100%);background:#fff;border:1px solid #efdcc4;border-radius:20px;padding:28px 24px;text-align:center;box-shadow:0 20px 50px -25px rgba(110,61,23,.6)}
+#fam-form h1{margin:6px 0 4px;font-size:24px} #fam-form p{margin:0 0 16px;color:#6e5643;font-size:14px}
+.fam-cup{font-size:40px}
+#fam-pin{width:100%;box-sizing:border-box;font-size:22px;letter-spacing:.3em;text-align:center;padding:12px;border:1px solid #e8cfae;border-radius:12px;margin-bottom:10px}
+.fam-rem{display:block;font-size:13px;color:#6e5643;margin-bottom:14px}
+#fam-form button{width:100%;font:600 16px system-ui;padding:12px;border:0;border-radius:12px;background:#a8642a;color:#fff;cursor:pointer}
+#fam-msg{margin:12px 0 0!important;min-height:1.2em}
+</style><script>
+// Stand-in for the claude.ai dashboard runtime: dash.draw / dash.calc / dash.data over one decrypted JSON.
+window.dash = (() => {
+  const draws = new Map(), calcs = new Map(), made = new Map(); let D = null;
+  const data = (n) => {
+    if (!D) return {status: 'loading', data: null};
+    if (n in D) return {status: 'ok', data: D[n]};
+    const c = calcs.get(n);
+    if (!c) return {status: 'error', data: null};
+    try { return {status: 'ok', data: c.fn(...c.inputs.map((i) => data(i).data || []))}; }
+    catch (e) { console.error(n, e); return {status: 'error', data: null}; }
+  };
+  const run = (n) => {
+    const def = draws.get(n); if (!def || !D) return;
+    document.querySelectorAll('[data-draw="' + n + '"]').forEach((el) => {
+      try {
+        if (typeof def === 'function') def(el);
+        else { if (!made.has(el)) made.set(el, def.mount ? def.mount(el) : {}); def.update(el, made.get(el)); }
+      } catch (e) { console.error(n, e); }
+    });
+  };
+  return {draw: (n, def) => { if (def) draws.set(n, def); run(n); }, calc: (n, c) => { calcs.set(n, c); }, data,
+          start: (d) => { D = d; for (const n of draws.keys()) run(n); }};
+})();
+</script></head><body><div id="fam-lock">
+  <form id="fam-form" autocomplete="off">
+    <div class="fam-cup">☕</div>
+    <h1>Chai Break Studios</h1>
+    <p>Family edition. Enter the PIN Karthik shared with you.</p>
+    <input id="fam-pin" type="password" inputmode="numeric" autocomplete="off" aria-label="PIN" placeholder="PIN" required>
+    <label class="fam-rem"><input type="checkbox" id="fam-remember" checked> Remember on this device</label>
+    <button type="submit">Open dashboard</button>
+    <p id="fam-msg" role="status"></p>
+  </form>
+</div>
+<script>
+(() => {
+  const ITER = 600000;
+  const unlock = async (pin) => {
+    const buf = new Uint8Array(await (await fetch('data.enc', {cache: 'no-store'})).arrayBuffer());
+    const salt = buf.slice(8, 16), ct = buf.slice(16);
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+    const bits = new Uint8Array(await crypto.subtle.deriveBits({name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256'}, base, 384));
+    const key = await crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-CBC', false, ['decrypt']);
+    return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name: 'AES-CBC', iv: bits.slice(32)}, key, ct)));
+  };
+  const lock = document.getElementById('fam-lock'), msg = document.getElementById('fam-msg');
+  const go = async (pin, quiet) => {
+    msg.textContent = quiet ? '' : 'Opening…';
+    try {
+      const d = await unlock(pin);
+      if (document.getElementById('fam-remember').checked) { try { localStorage.setItem('fam-pin', pin); } catch (e) {} }
+      lock.remove(); document.getElementById('dash-root').hidden = false; dash.start(d);
+    } catch (e) {
+      try { localStorage.removeItem('fam-pin'); } catch (e2) {}
+      msg.textContent = quiet ? '' : 'Wrong PIN. Try again.';
+    }
+  };
+  document.getElementById('fam-form').addEventListener('submit', (e) => { e.preventDefault(); go(document.getElementById('fam-pin').value.trim()); });
+  let saved = null; try { saved = localStorage.getItem('fam-pin'); } catch (e) {}
+  if (saved) go(saved, true);
+})();
+</script><div id="dash-root" hidden>
+<style>
+/* Layout: chai-stall ledger. Steaming hero band, count-up tiles, release pipeline, one attention card per game, masala-coloured game covers with inline detail, full ledger. */
+#dash-root{--dash-gutter:0}
+.cb{
+  /* Always bright: the page keeps its own light palette in every theme. */
+  --color-bg:#fffaf1; --color-panel:#ffffff; --color-fg:#2a1a0e; --color-fg-muted:#6e5643; --color-border-line:#efdcc4;
+  --color-ok:#2e9d4f; --color-warn:#e07b1f; --color-bad:#d64545; color-scheme:light;
+  --chai:color-mix(in srgb,#a8642a 78%,var(--color-fg));
+  --chai-deep:color-mix(in srgb,#6e3d17 55%,var(--color-fg));
+  --kesar:#e0912f; --haldi:#d9a31c; --elaichi:#5f8a35; --gulab:#c2577a; --neel:#3d6f99; --masala:#8a3b2a;
+  --chai-tint:color-mix(in srgb,#a8642a 12%,var(--color-bg));
+  --chai-line:color-mix(in srgb,#a8642a 32%,var(--color-border-line));
+  --ease:var(--cds-ease-out,cubic-bezier(.2,.8,.2,1));
+  display:grid; grid-template-columns:minmax(0,1fr); gap:var(--cds-gap-xl); font-family:var(--font-anthropic-sans); color:var(--color-fg);
+}
+.cb > *{min-width:0}
+.cb *{box-sizing:border-box}
+.cb{position:relative; isolation:isolate; min-height:100%; box-sizing:border-box; width:100%; max-width:100%; overflow-x:clip;
+  padding-block:20px 40px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  background:
+    radial-gradient(60% 40% at 0% 0%, rgba(255,183,77,.55), transparent 70%),
+    radial-gradient(50% 35% at 100% 8%, rgba(255,128,171,.45), transparent 70%),
+    radial-gradient(55% 40% at 100% 60%, rgba(100,181,246,.40), transparent 70%),
+    radial-gradient(50% 40% at 0% 85%, rgba(129,199,132,.45), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(168,100,42,.10) 1px, transparent 1.6px) 0 0/18px 18px,
+    #fff4e2}
+.cb::before{content:""; position:absolute; inset:-40px 0 0; z-index:-1; pointer-events:none; opacity:.10;
+  background:url('../img/hero.webp') center top/cover no-repeat; filter:blur(28px) saturate(1.2);
+  mask-image:linear-gradient(#000 0, transparent 900px); -webkit-mask-image:linear-gradient(#000 0, transparent 900px)}
+
+/* Hero */
+@font-face{font-family:'CB Sign'; src:url('../fonts/baloo-2-latin-800-normal.woff2') format('woff2'); font-weight:800; font-display:swap}
+@font-face{font-family:'CB Hand'; src:url('../fonts/Kalam-700.woff2') format('woff2'); font-weight:700; font-display:swap}
+/* Hero: the whole picture, uncropped; text is painted on the orange wall (image x 0-49%, y 39-80%; the boy's bat starts at y 58%). */
+.cb-hero{position:relative; overflow:hidden; container-type:inline-size; aspect-ratio:2752/1536; border-radius:calc(var(--cds-radius) * 2);
+  background:#e9a548 url('../img/hero.webp') center/100% 100% no-repeat; border:1px solid var(--chai-line)}
+.cb-wall{position:absolute; left:2.6%; top:40.5%; width:45%; color:#fff4e0; margin:0}
+.cb-eyebrow{margin:0 0 .3cqw; font-family:'CB Hand','Kalam',cursive; font-weight:700; font-size:1.3cqw; letter-spacing:.14em; text-transform:uppercase;
+  color:#5b1f0b; mix-blend-mode:multiply; opacity:.8; transform:rotate(-1deg)}
+.cb-title{margin:0; font-family:'CB Sign','Baloo 2',system-ui,sans-serif; font-weight:800; font-size:4.5cqw; line-height:1; letter-spacing:.01em; white-space:nowrap;
+  color:#fff6e6; text-shadow:.18cqw .18cqw 0 #8a2a12, .36cqw .36cqw 0 rgba(90,30,10,.35); transform:rotate(-1.6deg); transform-origin:left center;
+  filter:url(#cb-paint)}
+.cb-title .b{color:#ffd23f}
+.cb-wall .cb-lede{position:absolute; left:0; top:calc(100% + .8cqw); width:74%; margin:0; font-family:'CB Hand','Kalam',cursive; font-weight:700;
+  font-size:1.5cqw; line-height:1.38; color:#4a1a08; mix-blend-mode:multiply; opacity:.86; transform:rotate(-1deg); filter:url(#cb-paint)}
+.cb-lede-below{display:none; margin:12px 4px 0; color:var(--color-fg-muted)}
+@media (max-width:640px){
+  .cb-eyebrow{font-size:2.6cqw} .cb-title{font-size:6.2cqw; white-space:normal}
+  .cb-wall .cb-lede{display:none} .cb-lede-below{display:block}
+}
+
+/* Tiles */
+.cb-tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--cds-gap-md)}
+.cb-tile{position:relative; overflow:hidden; background:linear-gradient(160deg, color-mix(in srgb,var(--tone,#a8642a) 22%,#fff) 0%, #fff 70%); border:1px solid var(--color-border-line); border-radius:calc(var(--cds-radius) * 1.5);
+  padding:var(--cds-pad-md) var(--cds-pad-lg); display:grid; gap:2px; transition:transform .25s var(--ease), border-color .25s}
+.cb-tile:hover{transform:translateY(-2px); border-color:var(--chai-line)}
+.cb-tile .dot{position:absolute; right:-18px; top:-18px; width:64px; height:64px; border-radius:50%; background:color-mix(in srgb,var(--tone,var(--chai)) 30%,transparent)}
+.cb-tile{box-shadow:0 6px 18px -10px color-mix(in srgb,var(--tone,#a8642a) 60%,transparent)}
+.cb-tile .k{font-size:var(--cds-font-size-caption); color:var(--color-fg-muted)}
+.cb-tile .v{font-family:var(--font-anthropic-serif); font-size:40px; line-height:1.1; font-variant-numeric:tabular-nums}
+.cb-tile .v.small{font-family:var(--font-anthropic-sans); font-size:var(--cds-font-size-heading); line-height:1.9; font-weight:var(--cds-font-weight-medium)}
+.cb-tile .s{font-size:var(--cds-font-size-caption); color:var(--color-fg-muted)}
+
+/* Revenue */
+.cb-money{display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:var(--cds-gap-md); margin-bottom:var(--cds-gap-md)}
+.cb-state{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:var(--cds-font-weight-medium); padding:3px 10px; border-radius:999px;
+  background:color-mix(in srgb,var(--color-warn) 16%,#fff); color:#8a4a10}
+.cb-state.ok{background:color-mix(in srgb,var(--color-ok) 16%,#fff); color:#1e6b36}
+.cb-table td.num,.cb-table th.num{text-align:right}
+.cb-neg{color:var(--color-bad)} .cb-pos{color:var(--color-ok)}
+.cb-earn{font-size:var(--cds-font-size-caption); font-weight:var(--cds-font-weight-medium); color:var(--color-ok)}
+
+/* About / dev log: a page torn from a school notebook, pinned to the wall. Motion only when allowed; resting state is fully visible. */
+.cb-about{position:relative; margin-top:56px; padding:38px 26px 30px 64px; border-radius:6px; transform:rotate(-.4deg);
+  background:repeating-linear-gradient(#fffdf6 0 29px, #d6e4f2 29px 30px), #fffdf6; background-position:0 14px;
+  box-shadow:0 1px 0 #e8dcc6, 0 22px 44px -22px rgba(90,40,10,.6)}
+.cb-about::before{content:""; position:absolute; top:0; bottom:0; left:46px; width:2px; background:#f0a3a3}
+.cb-about::after{content:""; position:absolute; left:14px; top:60px; bottom:60px; width:14px;
+  background:radial-gradient(circle, #f3e6cf 5px, transparent 5.5px) 0 0/14px 64px repeat-y}
+.cb-about .cb-tape{position:absolute; top:-14px; width:120px; height:30px; background:rgba(255,210,63,.75); box-shadow:0 1px 3px rgba(0,0,0,.12); transition:transform .3s}
+.cb-about .cb-tape.l{left:18%; transform:rotate(-4deg)} .cb-about .cb-tape.r{right:14%; transform:rotate(5deg); background:rgba(255,128,171,.6)}
+.cb-about:hover .cb-tape.l{transform:rotate(-8deg) translateY(-3px)} .cb-about:hover .cb-tape.r{transform:rotate(9deg) translateY(-3px)}
+.cb-about-grid{display:grid; grid-template-columns:auto minmax(0,1fr); gap:26px; align-items:start}
+.cb-pin{position:relative; padding-top:14px}
+.cb-pin::before{content:""; position:absolute; top:0; left:50%; width:16px; height:16px; margin-left:-8px; border-radius:50%; z-index:2;
+  background:radial-gradient(circle at 35% 35%, #ff8a8a, #c62828 70%); box-shadow:0 2px 3px rgba(0,0,0,.35)}
+.cb-polaroid{width:140px; padding:8px 8px 28px; background:#fff; box-shadow:0 8px 18px rgba(60,30,10,.28); transform:rotate(-5deg); transform-origin:50% 0; text-align:center}
+.cb-polaroid .cb-face{display:block; width:100%; aspect-ratio:1; object-fit:cover; background:#fff}
+.cb-polaroid span{display:block; margin-top:6px; font:700 14px 'CB Hand','Kalam',cursive; color:#5a3e28}
+.cb-about h2{position:relative; display:inline-block; margin:0; font:800 clamp(28px,4vw,38px)/1.1 'CB Sign','Baloo 2',system-ui,sans-serif; color:#2a1a0e}
+.cb-about h2 em{font-style:normal; color:#c2577a}
+.cb-about h2 .cb-skull{display:inline-block}
+.cb-scribble{position:absolute; left:0; right:0; bottom:-10px; width:100%; height:14px; overflow:visible}
+.cb-scribble path{fill:none; stroke:#e0912f; stroke-width:4; stroke-linecap:round}
+.cb-about .cb-role{margin:10px 0 14px; font:700 17px 'CB Hand','Kalam',cursive; color:#a8521b}
+.cb-about p{margin:0 0 12px; max-width:64ch; line-height:30px; font-size:17px}
+.cb-about p .cb-hl{background:linear-gradient(rgba(255,210,63,.8),rgba(255,210,63,.8)) 0 85%/100% 45% no-repeat; padding:0 2px}
+.cb-about p .cb-hl.pink{background-image:linear-gradient(rgba(255,128,171,.55),rgba(255,128,171,.55))}
+.cb-stickers{display:flex; flex-wrap:wrap; gap:10px; margin:6px 0 18px}
+.cb-sticker{font:800 15px/1 'CB Sign','Baloo 2',system-ui,sans-serif; padding:8px 12px; border-radius:12px; color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.15); transition:transform .2s}
+.cb-sticker:hover{transform:scale(1.1) rotate(0) !important}
+.cb-sticker:nth-child(1){background:#e0912f; transform:rotate(-3deg)} .cb-sticker:nth-child(2){background:#3d6f99; transform:rotate(2deg)}
+.cb-sticker:nth-child(3){background:#4f7a2a; transform:rotate(-1deg)} .cb-sticker:nth-child(4){background:#c2577a; transform:rotate(3deg)}
+.cb-sticker:nth-child(5){background:#2a1a0e; transform:rotate(-2deg)}
+.cb-patch{margin:18px 0 10px; padding:14px 16px 6px; border:2px dashed #e0b98a; border-radius:12px; background:rgba(255,246,226,.85); max-width:62ch}
+.cb-patch h3{margin:0 0 6px; font:800 18px 'CB Sign','Baloo 2',system-ui,sans-serif; color:#7a4318}
+.cb-patch ol{list-style:none; margin:0; padding:0}
+.cb-patch li{display:grid; grid-template-columns:62px 1fr; gap:8px; line-height:28px; font-size:15.5px}
+.cb-patch b{font:700 15px 'CB Hand','Kalam',cursive; color:#c2577a}
+.cb-patch s{color:var(--color-fg-muted)}
+.cb-sig{font:700 26px 'CB Hand','Kalam',cursive; color:#a8521b; margin-top:6px}
+.cb-sig small{display:block; font:400 14px var(--font-anthropic-sans); color:var(--color-fg-muted)}
+@media (max-width:560px){ .cb-about{padding:34px 18px 24px 40px} .cb-about::before{left:26px} .cb-about::after{left:4px} .cb-about-grid{grid-template-columns:1fr} .cb-polaroid{width:118px} .cb-patch li{grid-template-columns:52px 1fr} }
+@media (prefers-reduced-motion:no-preference){
+  .cb-polaroid{animation:cb-swing 4.5s ease-in-out infinite}
+  @keyframes cb-swing{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(-1.5deg)}}
+  .cb-about h2 .cb-skull{animation:cb-wobble 2.4s ease-in-out infinite}
+  @keyframes cb-wobble{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg) scale(1.1)}40%{transform:rotate(10deg)}60%{transform:rotate(0)}}
+  /* Scroll-in sequence: armed by script only, so the page is complete without it */
+  .cb-about.arm .cb-sticker{opacity:0; transform:scale(.3) rotate(-20deg)}
+  .cb-about.arm.in .cb-sticker{opacity:1; transition:opacity .3s, transform .5s cubic-bezier(.22,1,.36,1)}
+  .cb-about.arm.in .cb-sticker:nth-child(1){transform:rotate(-3deg); transition-delay:.1s} .cb-about.arm.in .cb-sticker:nth-child(2){transform:rotate(2deg); transition-delay:.2s}
+  .cb-about.arm.in .cb-sticker:nth-child(3){transform:rotate(-1deg); transition-delay:.3s} .cb-about.arm.in .cb-sticker:nth-child(4){transform:rotate(3deg); transition-delay:.4s}
+  .cb-about.arm.in .cb-sticker:nth-child(5){transform:rotate(-2deg); transition-delay:.5s}
+  .cb-about.arm .cb-hl{background-size:0% 45%} .cb-about.arm.in .cb-hl{background-size:100% 45%; transition:background-size .9s ease .6s}
+  .cb-about.arm .cb-scribble path{stroke-dasharray:400; stroke-dashoffset:400} .cb-about.arm.in .cb-scribble path{stroke-dashoffset:0; transition:stroke-dashoffset 1.1s ease .2s}
+  .cb-about.arm .cb-patch li{opacity:0; transform:translateX(-14px)}
+  .cb-about.arm.in .cb-patch li{opacity:1; transform:none; transition:opacity .4s, transform .4s}
+  .cb-about.arm.in .cb-patch li:nth-child(2){transition-delay:.15s} .cb-about.arm.in .cb-patch li:nth-child(3){transition-delay:.3s}
+  .cb-about.arm.in .cb-patch li:nth-child(4){transition-delay:.45s} .cb-about.arm.in .cb-patch li:nth-child(5){transition-delay:.6s} .cb-about.arm.in .cb-patch li:nth-child(6){transition-delay:.75s}
+}
+
+/* Section headings */
+.cb h2{margin:0 0 4px; font-family:var(--font-anthropic-serif); font-weight:400; font-size:clamp(22px,3vw,26px)}
+.cb-sub{margin:0 0 var(--cds-gap-md); color:var(--color-fg-muted); font-size:var(--cds-font-size-caption)}
+
+/* Fun layer: vibe check, roast, serious mode, night mode */
+.cb .plain{display:none} .cb.serious .plain{display:inline} .cb.serious .fun{display:none}
+.cb-modebar{display:flex; justify-content:flex-end; gap:8px; margin:-8px 0 -10px}
+.cb-vibe{display:grid; gap:8px; padding:16px 18px; border-radius:16px; background:linear-gradient(120deg,#2a1a0e,#4a2a14); color:#fff4e0; box-shadow:0 12px 28px -18px rgba(60,30,10,.8)}
+.cb-vibe p{margin:0; line-height:1.5}
+.cb-vibe .lbl{font:800 13px/1 'CB Sign','Baloo 2',system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:#ffd23f; margin-right:8px}
+.cb-vibe .line{font:700 clamp(17px,2.2vw,21px)/1.35 'CB Hand','Kalam',cursive}
+.cb-vibe .roast{font-size:14px; color:#f3d9b8}
+.cb-vibe .roast .lbl{color:#ff9ab8}
+.cb.serious .cb-vibe .roast{display:none}
+.cb-night-note{display:none; margin:0; padding:10px 14px; border-radius:12px; background:#2b2140; color:#ffe9b0; font:700 16px 'CB Hand','Kalam',cursive}
+.cb.night .cb-night-note{display:block}
+.cb.night{--color-bg:#191424; --color-panel:#241d33; --color-fg:#f6ead8; --color-fg-muted:#c7b6a2; --color-border-line:#3a2f4b;
+  --chai-tint:#2a2140; --chai-line:#4a3a5e; color-scheme:dark;
+  background:radial-gradient(45% 30% at 85% 8%, rgba(255,190,90,.22), transparent 70%), radial-gradient(60% 40% at 10% 90%, rgba(120,90,200,.25), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1px, transparent 1.6px) 0 0/18px 18px, #191424}
+.cb.night .cb-hero{filter:brightness(.72) saturate(.9) hue-rotate(-8deg)}
+.cb.night .cb-tile{background:linear-gradient(160deg, color-mix(in srgb,var(--tone,#a8642a) 26%,#241d33) 0%, #241d33 70%)}
+.cb.night .cb-table th{background:#241d33}
+.cb.night .cb-attn > li{background:#2a2238}
+
+/* Pipeline: a Mumbai local. Each stage is a coach; the rail runs underneath. */
+.cb-pipe{position:relative; display:flex; gap:5px; height:70px; padding:0 0 14px}
+.cb-pipe::after{content:""; position:absolute; left:-6px; right:-6px; bottom:0; height:8px;
+  background:linear-gradient(#8d8d8d,#8d8d8d) 0 0/100% 2px no-repeat, linear-gradient(#8d8d8d,#8d8d8d) 0 100%/100% 2px no-repeat,
+    repeating-linear-gradient(90deg,#7a5a3a 0 6px,transparent 6px 15px)}
+.cb-seg{position:relative; display:flex; align-items:flex-end; justify-content:center; min-width:34px; padding-bottom:5px; color:#fff;
+  font:800 16px/1 'CB Sign','Baloo 2',system-ui,sans-serif; font-variant-numeric:tabular-nums; border-radius:12px 12px 5px 5px;
+  border:2px solid rgba(0,0,0,.22); text-shadow:0 1px 0 rgba(0,0,0,.25);
+  background:repeating-linear-gradient(90deg, transparent 0 7px, rgba(255,255,255,.6) 7px 17px, transparent 17px 21px) 0 9px/100% 13px no-repeat, var(--tone);
+  transition:flex-grow .9s var(--ease)}
+.cb-seg:first-child{border-top-left-radius:26px}
+.cb-seg::after{content:""; position:absolute; left:10%; right:10%; bottom:-11px; height:10px;
+  background:radial-gradient(circle,#2f2f2f 4px,#9a9a9a 4.6px,transparent 5.2px) 0 0/24px 10px repeat-x}
+@media (prefers-reduced-motion:no-preference){
+  .cb-seg{animation:cb-chug 1.4s ease-in-out infinite} .cb-seg:nth-child(2n){animation-delay:.2s} .cb-seg:nth-child(3n){animation-delay:.4s}
+  @keyframes cb-chug{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+}
+.cb-legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:10px; padding:0; list-style:none; font-size:var(--cds-font-size-caption)}
+.cb-legend li{display:flex; align-items:center; gap:6px}
+.cb-legend i{width:10px; height:10px; border-radius:3px; background:var(--tone)}
+.cb-legend b{font-variant-numeric:tabular-nums; font-weight:var(--cds-font-weight-medium)}
+
+/* Tester clock: 14 days, 12 testers */
+.cb-clock{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px}
+.cb-clock li{display:flex; gap:14px; align-items:center; padding:14px; border-radius:16px; background:var(--color-panel); border:1px solid var(--color-border-line)}
+.cb-ring{flex:none; width:74px; height:74px}
+.cb-ring circle{fill:none; stroke-width:8}
+.cb-ring .bg{stroke:color-mix(in srgb,var(--color-fg) 10%,transparent)}
+.cb-ring .fg{stroke:var(--ring,#4f7a2a); stroke-linecap:round; transform:rotate(-90deg); transform-origin:50% 50%; transition:stroke-dashoffset 1s var(--ease)}
+.cb-ring text{font:800 17px 'CB Sign','Baloo 2',system-ui,sans-serif; fill:var(--color-fg); text-anchor:middle; dominant-baseline:central}
+.cb-ring .sm{font:600 9px var(--font-anthropic-sans); fill:var(--color-fg-muted)}
+.cb-clock .nm{display:flex; align-items:center; gap:8px; font-weight:var(--cds-font-weight-medium)}
+.cb-clock .ln{display:block; font-size:13px; color:var(--color-fg-muted); margin-top:3px}
+.cb-clock .quip{display:block; font:700 15px 'CB Hand','Kalam',cursive; color:var(--chai-deep); margin-top:4px}
+
+/* Launch party: banner + confetti, first time a game goes live */
+/* Ratings and reviews */
+.cb-revs{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px}
+.cb-revs li{display:flex; flex-direction:column; gap:6px; padding:14px 16px; border-radius:16px; background:#fffdf6; border:1px solid var(--chai-line)}
+.cb-revs li.low{background:color-mix(in srgb,var(--color-bad) 8%,var(--color-panel)); border-color:color-mix(in srgb,var(--color-bad) 30%,transparent)}
+.cb-revs .stars{color:var(--haldi); letter-spacing:2px; font-size:17px}
+.cb-revs .stars i{color:var(--color-border-line); font-style:normal}
+.cb-revs q{font:700 16px/1.4 'CB Hand','Kalam',cursive; color:var(--color-fg); quotes:"“" "”"}
+.cb-revs .meta{display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; color:var(--color-fg-muted); margin-top:auto}
+.cb-revs .rp{padding:2px 9px; border-radius:999px; background:#ffd23f; color:var(--color-fg); font-weight:var(--cds-font-weight-medium); text-decoration:none}
+.cb-revs .rp.done{background:var(--chai-tint)}
+.cb-revs .draft{display:grid; gap:6px; padding:10px 12px; border-radius:12px; background:var(--chai-tint); border:1px dashed var(--chai-line)}
+.cb-revs .draft .lb{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--chai-deep); font-weight:var(--cds-font-weight-medium)}
+.cb-revs .draft .txt{margin:0; font-size:13px; line-height:1.45; user-select:text}
+.cb-revs .draft button{justify-self:start; font:inherit; font-size:12px; padding:4px 12px; border-radius:999px; border:1px solid var(--chai-line); background:var(--color-panel); color:var(--color-fg); cursor:pointer}
+.cb-xtra{grid-column:1/-1; min-width:0}
+.cb-xline{margin:0 0 10px; font-size:var(--cds-font-size-caption); color:var(--color-fg-muted)}
+.cb-hint{font-size:11px; color:var(--chai-deep); font-weight:var(--cds-font-weight-medium)}
+/* Downloads headline */
+.cb-dlhero{display:grid; grid-template-columns:minmax(220px,auto) 1fr; gap:18px 28px; align-items:center; padding:22px 26px; border-radius:calc(var(--cds-radius) * 2);
+  background:linear-gradient(120deg,#2e9d4f,#1f7a3c 60%,#175f30); color:#fff; box-shadow:0 14px 30px -18px rgba(20,90,40,.9)}
+.cb-dlhero .big{display:grid; gap:2px}
+.cb-dlhero .k{font:800 13px/1 'CB Sign','Baloo 2',system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:#d9f7c8}
+.cb-dlhero b{font:800 clamp(56px,8vw,84px)/1 'CB Sign','Baloo 2',system-ui,sans-serif; font-variant-numeric:tabular-nums}
+.cb-dlhero .s{font-size:13px; color:#d9f7c8}
+.cb-dlhero .per{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:10px}
+.cb-dlhero .per li{display:flex; align-items:center; gap:8px; padding:8px 14px 8px 8px; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); font-size:14px}
+.cb-dlhero .per li b{font:800 20px/1 'CB Sign','Baloo 2',system-ui,sans-serif}
+.cb-dlhero .per .cb-icon{width:28px; height:28px}
+@media (max-width:640px){ .cb-dlhero{grid-template-columns:1fr; padding:18px} }
+.cb-dl{font:800 16px/1.2 'CB Sign','Baloo 2',system-ui,sans-serif; color:var(--color-ok)}
+/* Gully launch map */
+.cb-lmap-sum{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; padding:0; list-style:none}
+.cb-lmap-sum li{padding:6px 12px; border-radius:999px; font-weight:var(--cds-font-weight-medium); font-size:14px; background:var(--chai-tint); border:1px solid var(--chai-line)}
+.cb-lmap{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px}
+.cb-lmap li{--st:var(--color-fg-muted); display:flex; flex-direction:column; gap:4px; padding:14px; border-radius:16px; background:color-mix(in srgb,var(--st) 7%,var(--color-panel)); border:1px solid color-mix(in srgb,var(--st) 30%,var(--color-border-line))}
+.cb-lmap li.live{--st:var(--color-ok)} .cb-lmap li.review{--st:var(--neel)} .cb-lmap li.blocked{--st:var(--color-warn)} .cb-lmap li.rejected{--st:var(--color-bad)} .cb-lmap li.todo{--st:var(--haldi)}
+.cb-lmap .top{display:flex; justify-content:space-between; align-items:center; gap:8px}
+.cb-lmap .pf{font:800 17px/1.2 'CB Sign','Baloo 2',system-ui,sans-serif}
+.cb-lmap .st{flex:none; font-size:12px; font-weight:var(--cds-font-weight-medium); padding:2px 9px; border-radius:999px; color:#fff; background:var(--st)}
+.cb-lmap .m{font:700 16px/1.3 'CB Hand','Kalam',cursive; color:var(--chai-deep)}
+.cb-lmap .d{font-size:13px; color:var(--color-fg-muted); line-height:1.45}
+.cb-lmap .pay{font-size:12px; font-weight:var(--cds-font-weight-medium); color:var(--color-ok); line-height:1.4}
+.cb-lmap .foot{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:auto; padding-top:6px; font-size:13px}
+.cb-lmap .on{padding:2px 9px; border-radius:999px; background:var(--chai-tint); border:1px solid var(--chai-line)}
+.cb-lmap .on.you{background:#ffd23f; border-color:#d9a31c; font-weight:var(--cds-font-weight-medium)}
+.cb-lgroup{margin:0 0 14px} .cb-lgroup h4{margin:0 0 8px; font:800 15px/1.2 'CB Sign','Baloo 2',system-ui,sans-serif; color:var(--chai-deep)}
+.cb-lmap-todo{margin:16px 0 0; padding:14px 18px 14px 36px; border-radius:16px; background:#fff3c4; border:1px dashed var(--haldi); display:grid; gap:4px}
+.cb-lmap-todo:empty{display:none}
+.cb-lmap-asof{font-size:12px; color:var(--color-fg-muted); margin:10px 0 0}
+.cb-launch{position:relative}
+.cb-launch .party{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding:14px 18px; border-radius:16px;
+  background:linear-gradient(110deg,#2e9d4f,#e0912f 55%,#c2577a); color:#fff; box-shadow:0 14px 30px -16px rgba(30,100,50,.7)}
+.cb-launch .party b{font:800 clamp(18px,2.4vw,24px)/1.2 'CB Sign','Baloo 2',system-ui,sans-serif}
+.cb-launch .party button{font:inherit; font-size:13px; padding:6px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.7); background:transparent; color:#fff; cursor:pointer}
+.cb-launch canvas{position:absolute; left:0; top:-240px; width:100%; height:560px; pointer-events:none; z-index:20}
+
+/* Problems ranked, hall of shame, chai meter, cobwebs */
+.cb-attn .rank{flex:none; font-size:20px; line-height:36px}
+.cb-mood{margin:-6px 0 14px; font:700 17px 'CB Hand','Kalam',cursive; color:var(--chai-deep)}
+.cb-shame{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; counter-reset:shame}
+.cb-shame li{position:relative; padding:14px 14px 14px 52px; border-radius:14px; background:var(--color-panel); border:1px solid var(--color-border-line); counter-increment:shame}
+.cb-shame li::before{content:counter(shame); position:absolute; left:12px; top:12px; width:28px; height:28px; border-radius:50%; display:grid; place-items:center;
+  background:#2a1a0e; color:#ffd23f; font:800 15px/1 'CB Sign','Baloo 2',system-ui,sans-serif}
+.cb-shame .t{display:block; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--color-fg-muted); font-weight:var(--cds-font-weight-medium)}
+.cb-shame .w{display:block; font:800 18px/1.2 'CB Sign','Baloo 2',system-ui,sans-serif; margin:2px 0 4px}
+.cb-shame .d{font-size:14px; color:var(--color-fg-muted)}
+.cb-meter{display:flex; gap:16px; align-items:center; margin:0 0 var(--cds-gap-md); padding:12px 16px; border-radius:16px; background:var(--color-panel); border:1px solid var(--color-border-line)}
+.cb-glass{position:relative; flex:none; width:54px; height:70px; border:3px solid #6e3d17; border-top:0; border-radius:0 0 10px 10px;
+  clip-path:polygon(0 0,100% 0,88% 100%,12% 100%); background:rgba(255,255,255,.55); overflow:hidden}
+.cb-glass i{position:absolute; inset:0; background:linear-gradient(#c98a4b,#8a4f1e); transform:scaleY(var(--fill,0)); transform-origin:bottom; transition:transform 1.2s var(--ease)}
+.cb-glass::after{content:""; position:absolute; inset:0; background:repeating-linear-gradient(transparent 0 16px, rgba(255,255,255,.35) 16px 18px)}
+.cb-meter p{margin:0}
+.cb-meter .big{font:800 20px/1.2 'CB Sign','Baloo 2',system-ui,sans-serif}
+.cb-meter .small{font-size:14px; color:var(--color-fg-muted)}
+.cb-card.dusty{position:relative}
+.cb-card.dusty::after{content:""; position:absolute; top:0; right:0; width:70px; height:70px; z-index:3; pointer-events:none; opacity:.85;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 70' fill='none' stroke='%23ffffff' stroke-width='1.2' stroke-opacity='.9'><path d='M70 0 L10 0 M70 0 L70 60 M70 0 L28 42 M70 0 L46 52 M70 0 L18 22'/><path d='M58 0 Q62 8 70 12 M44 0 Q52 18 70 26 M30 0 Q42 28 70 40 M18 0 Q34 40 70 56'/></svg>") no-repeat top right/100% 100%;
+  filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
+
+/* Attention: one card per game */
+.cb-attn{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:var(--cds-gap-md)}
+.cb-attn > li{display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border-radius:calc(var(--cds-radius) * 1.5);
+  background:color-mix(in srgb,var(--color-warn) 9%,var(--color-bg)); border:1px solid color-mix(in srgb,var(--color-warn) 28%,transparent)}
+.cb-attn > li.bad{background:color-mix(in srgb,var(--color-bad) 9%,var(--color-bg)); border-color:color-mix(in srgb,var(--color-bad) 28%,transparent)}
+.cb-attn .who{font-weight:var(--cds-font-weight-medium); display:block; margin-bottom:4px}
+.cb-attn ul{margin:0; padding-left:16px; font-size:var(--cds-font-size-caption); color:var(--color-fg-muted); display:grid; gap:3px}
+.cb-attn .body{min-width:0}
+.cb-mono{flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center; color:#fff; font-weight:700; font-size:14px; letter-spacing:.02em;
+  background:linear-gradient(135deg,var(--tone),color-mix(in srgb,var(--tone) 55%,#000))}
+
+/* Filters */
+.cb-chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:var(--cds-gap-md)}
+.cb-chip{font:inherit; font-size:var(--cds-font-size-caption); padding:7px 14px; border-radius:999px; cursor:pointer; display:inline-flex; gap:6px; align-items:center;
+  border:1px solid var(--chai-line); background:var(--color-bg); color:var(--color-fg); transition:background .2s, color .2s, transform .15s}
+.cb-chip:active{transform:scale(.96)}
+.cb-chip .n{font-variant-numeric:tabular-nums; opacity:.7}
+.cb-chip[aria-pressed="true"]{background:var(--chai); border-color:var(--chai); color:var(--color-bg)}
+.cb-chip:focus-visible,.cb-card:focus-visible{outline:2px solid var(--kesar); outline-offset:2px}
+
+/* Game cards */
+.cb-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:var(--cds-gap-md); min-height:160px}
+.cb-card{display:grid; grid-template-rows:auto 1fr; padding:0; overflow:hidden; text-align:left; font:inherit; color:inherit; cursor:pointer;
+  background:var(--color-panel); border:1px solid var(--color-border-line); border-radius:calc(var(--cds-radius) * 1.5);
+  transition:transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s}
+.cb-card:hover{transform:translateY(-3px); box-shadow:0 10px 24px -12px color-mix(in srgb,#000 45%,transparent); border-color:var(--chai-line)}
+.cb-card[aria-expanded="true"]{border-color:var(--chai); box-shadow:0 0 0 2px var(--chai)}
+.cb-cover{position:relative; overflow:hidden; height:128px; display:flex; align-items:flex-end; justify-content:space-between; padding:10px 12px;
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb,#fff 22%,transparent) 1px, transparent 1.5px) 0 0/12px 12px,
+    linear-gradient(135deg,var(--tone),color-mix(in srgb,var(--tone) 50%,#1a0d05))}
+.cb-cover .ini{font-family:var(--font-anthropic-serif); font-size:42px; line-height:1; color:color-mix(in srgb,#fff 92%,transparent);
+  text-shadow:0 2px 0 color-mix(in srgb,#000 25%,transparent); transition:transform .35s var(--ease)}
+.cb-card:hover .ini{transform:rotate(-6deg) scale(1.06)}
+.cb-cover img.art{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .6s var(--ease)}
+.cb-card:hover .cb-cover img.art{transform:scale(1.07)}
+.cb-cover .cb-pill{position:absolute; top:10px; right:10px; z-index:2; box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.cb-cover.shot{height:236px; justify-content:center; align-items:center; padding:14px 0 0}
+.cb-cover .bg{position:absolute; inset:-24px; background-size:cover; background-position:center top; filter:blur(18px) saturate(1.4); opacity:.95}
+.cb-cover .phone{position:relative; z-index:1; height:100%; aspect-ratio:9/19; object-fit:cover; object-position:top; border-radius:16px 16px 0 0;
+  border:3px solid #1f1a17; border-bottom:0; box-shadow:0 10px 24px rgba(0,0,0,.35); transform:translateY(10px) rotate(-2deg);
+  transition:transform .45s var(--ease)}
+.cb-card:hover .cb-cover .phone{transform:translateY(2px) rotate(0) scale(1.04)}
+.cb-name{display:flex; align-items:center; gap:10px; min-width:0}
+.cb-icon{flex:none; width:34px; height:34px; border-radius:9px; object-fit:cover; background:var(--color-bg);
+  box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.cb-icon.blank{box-shadow:none; border:1.5px dashed var(--color-border-line); background:transparent}
+.cb-icon.sm{width:22px; height:22px; border-radius:6px}
+.cb-attn .cb-icon{width:36px; height:36px}
+.cb-body{display:grid; gap:6px; align-content:start; padding:12px}
+.cb-card .nm{font-weight:var(--cds-font-weight-medium); font-size:var(--cds-font-size-body)}
+.cb-card .pk{font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--color-fg-muted); overflow-wrap:anywhere}
+.cb-card .ver{font-variant-numeric:tabular-nums; font-size:var(--cds-font-size-caption)}
+.cb-card .when{font-size:11px; color:var(--color-fg-muted)}
+.cb-flag{font-size:11px; color:var(--color-warn); font-weight:var(--cds-font-weight-medium)}
+.cb-pill{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:var(--cds-font-weight-medium); padding:3px 9px; border-radius:999px; white-space:nowrap;
+  background:color-mix(in srgb,var(--color-bg) 88%,transparent); color:var(--color-fg)}
+.cb-pill::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--pc)}
+.cb-pill.live{--pc:var(--color-ok)} .cb-pill.review{--pc:var(--color-warn)} .cb-pill.internal{--pc:var(--elaichi)}
+.cb-pill.web{--pc:var(--neel)} .cb-pill.dev{--pc:var(--kesar)} .cb-pill.unknown{--pc:var(--color-bad)}
+
+/* Detail */
+.cb-detail{grid-column:1/-1; background:var(--chai-tint); border:1px solid var(--chai-line); border-radius:calc(var(--cds-radius) * 1.5); padding:var(--cds-pad-lg);
+  display:grid; gap:var(--cds-gap-lg); grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.cb-detail h3{margin:0 0 8px; font-size:var(--cds-font-size-caption); letter-spacing:.1em; text-transform:uppercase; color:var(--chai-deep); font-weight:var(--cds-font-weight-medium)}
+.cb-detail dl{display:grid; grid-template-columns:max-content 1fr; gap:5px 12px; margin:0; font-size:var(--cds-font-size-caption)}
+.cb-detail dt{color:var(--color-fg-muted)}
+.cb-detail dd{margin:0; min-width:0; overflow-wrap:anywhere; font-variant-numeric:tabular-nums}
+.cb-links{grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px}
+.cb-links a{font-size:var(--cds-font-size-caption); padding:6px 12px; border-radius:999px; text-decoration:none; font-weight:var(--cds-font-weight-medium);
+  border:1px solid var(--chai-line); background:var(--color-bg); color:var(--color-fg); transition:background .2s, color .2s}
+.cb-links a:hover{background:var(--chai); color:var(--color-bg)}
+
+/* Ledger */
+.cb-tablewrap{overflow-x:auto; border:1px solid var(--color-border-line); border-radius:calc(var(--cds-radius) * 1.5)}
+.cb-table{border-collapse:collapse; width:100%; font-size:var(--cds-font-size-caption); font-variant-numeric:tabular-nums}
+.cb-table th,.cb-table td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--color-border-line); white-space:nowrap}
+.cb-table td.nm{display:flex; align-items:center; gap:8px}
+.cb-table th{color:var(--color-fg-muted); font-weight:var(--cds-font-weight-medium); background:var(--color-panel)}
+.cb-table tbody tr:hover{background:var(--chai-tint)}
+.cb-msg{color:var(--color-fg-muted); font-size:var(--cds-font-size-caption)}
+.cb details{font-size:var(--cds-font-size-caption); color:var(--color-fg-muted); max-width:72ch}
+.cb summary{cursor:pointer; color:var(--color-fg)}
+
+/* Motion: only for people who haven't turned it off */
+@media (prefers-reduced-motion:no-preference){
+  @media (min-width:641px){ .cb-eyebrow,.cb-title,.cb-wall .cb-lede{animation:cb-paint 1.1s var(--ease) both} }
+  .cb-title{animation-delay:.25s} .cb-wall .cb-lede{animation-delay:.6s}
+  @keyframes cb-paint{from{clip-path:inset(-20% 100% -20% 0)}to{clip-path:inset(-20% -5% -20% 0)}}
+  @keyframes cb-rise{0%{transform:translateY(6px);opacity:0}35%{opacity:.75}100%{transform:translateY(-10px);opacity:0}}
+  @keyframes cb-slosh{0%,100%{transform:skewY(0)}50%{transform:skewY(-2deg)}}
+  .cb-tile,.cb-sect{animation:cb-up .6s var(--ease) both}
+  .cb-tile:nth-child(2){animation-delay:.06s} .cb-tile:nth-child(3){animation-delay:.12s} .cb-tile:nth-child(4){animation-delay:.18s} .cb-tile:nth-child(5){animation-delay:.24s}
+  .cb.enter .cb-card,.cb.enter .cb-attn > li{animation:cb-up .5s var(--ease) both; animation-delay:calc(var(--i,0) * 35ms)}
+  .cb-detail{animation:cb-open .35s var(--ease) both; transform-origin:top}
+  .cb-pill.review::before{animation:cb-pulse 1.6s ease-in-out infinite}
+  @keyframes cb-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes cb-open{from{opacity:0;transform:scaleY(.96)}to{opacity:1;transform:none}}
+  @keyframes cb-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--color-warn) 60%,transparent)}50%{box-shadow:0 0 0 5px transparent}}
+}
+</style>
+
+<div class="cb enter" id="cb">
+  <header class="cb-hero" id="studio" role="img" aria-label="A Mumbai chai stall at golden hour with kids, a puppy and a pani puri cart; the studio name is painted on the wall">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <filter id="cb-paint"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2"/></filter>
+    </svg>
+    <div class="cb-wall">
+      <p class="cb-eyebrow">Studio dashboard · family edition</p>
+      <h1 class="cb-title">Chai Break <span class="b">Studios</span></h1>
+      <p class="cb-lede" data-read lang="en">Every game the studio has made, where it stands on Google Play and where to find it. Versions come from each project folder, release status from the read-only Play connection and your release notes.</p>
+    </div>
+  </header>
+  <p class="cb-lede-below" lang="en">Every game the studio has made, where it stands on Google Play and where to find it. Versions come from each project folder, release status from the read-only Play connection and your release notes.</p>
+
+  <div class="cb-modebar"><button class="cb-chip" id="cb-party" type="button" title="Preview the launch-day confetti">🎉 Launch preview</button><button class="cb-chip" id="cb-serious" type="button" aria-pressed="false">Serious mode</button></div>
+  <p class="cb-night-note">Why are you awake? Go to sleep. (Ok, one more build.)</p>
+  <section class="cb-vibe" id="vibe" aria-live="polite">
+    <p><span class="lbl"><span class="fun">Vibe check</span><span class="plain">Today</span></span><span class="line" data-draw="vibe" data-source="summary money_total">—</span></p>
+    <p class="roast"><span class="lbl">Daily roast 🔥</span><span data-draw="roast" data-source="games play money_total">—</span></p>
+  </section>
+
+  <div class="cb-launch" id="launch" data-draw="launch" data-source="games play"></div>
+
+
+  <section class="cb-dlhero" id="downloads" aria-label="Downloads">
+    <div class="big"><span class="k"><span class="fun">Downloads 📲</span><span class="plain">Downloads</span></span><b data-draw="dlnum" data-source="games play">—</b><span class="s" data-draw="dlsub" data-source="games play">—</span></div>
+    <ul class="per" data-draw="dlper" data-source="games play art"></ul>
+  </section>
+
+  <section class="cb-tiles" id="totals" aria-label="Studio totals">
+    <div class="cb-tile" style="--tone:var(--chai)"><i class="dot"></i><span class="k">Games</span><b class="v" data-draw="sum" data-source="summary" data-field="total" data-row="0">—</b><span class="s">in the catalogue</span></div>
+    <div class="cb-tile" style="--tone:var(--elaichi)"><i class="dot"></i><span class="k">On Google Play</span><b class="v" data-draw="sum" data-source="summary" data-field="on_play" data-row="0">—</b><span class="s" data-draw="sum" data-source="summary" data-field="play_split" data-row="0">live, testing or in review</span></div>
+    <div class="cb-tile" style="--tone:var(--color-warn)"><i class="dot"></i><span class="k">In production review</span><b class="v" data-draw="sum" data-source="summary" data-field="in_review" data-row="0">—</b><span class="s">waiting on Google</span></div>
+    <div class="cb-tile" style="--tone:var(--neel)"><i class="dot"></i><span class="k">Web demo only</span><b class="v" data-draw="sum" data-source="summary" data-field="web_only" data-row="0">—</b><span class="s">no Android build yet</span></div>
+    <div class="cb-tile" style="--tone:var(--kesar)"><i class="dot"></i><span class="k">Play API</span><b class="v small" data-draw="sum" data-source="summary" data-field="play_api" data-row="0">—</b><span class="s">last sync <span data-draw="sum" data-source="summary" data-field="play_synced" data-row="0">—</span></span></div>
+  </section>
+
+  <section class="cb-sect" id="revenue">
+    <h2>Revenue &amp; profit <span class="cb-state" data-draw="finstate" data-source="finance">—</span></h2>
+    <p class="cb-sub">From Google Play's monthly earnings reports: sales, minus Google's fee, refunds and tax, is what you keep. Profit then subtracts the costs you list in <code>costs.json</code>. Ad revenue from AdMob is not included yet.</p>
+    <div class="cb-money" aria-label="Money totals">
+      <div class="cb-tile" style="--tone:var(--elaichi)"><i class="dot"></i><span class="k">You kept, all time</span><b class="v" data-draw="fin" data-source="money_total" data-field="net" data-row="0">—</b><span class="s">after Google's fee and refunds</span></div>
+      <div class="cb-tile" style="--tone:var(--haldi)"><i class="dot"></i><span class="k">This month</span><b class="v" data-draw="fin" data-source="money_total" data-field="net_month" data-row="0">—</b><span class="s"><span data-draw="finmonth" data-source="money_total" data-field="month" data-row="0">—</span></span></div>
+      <div class="cb-tile" style="--tone:var(--gulab)"><i class="dot"></i><span class="k">Google's fees</span><b class="v" data-draw="fin" data-source="money_total" data-field="google_fee" data-row="0">—</b><span class="s">all time</span></div>
+      <div class="cb-tile" style="--tone:var(--masala)"><i class="dot"></i><span class="k">Your costs</span><b class="v" data-draw="fin" data-source="money_total" data-field="costs" data-row="0">—</b><span class="s">from costs.json</span></div>
+      <div class="cb-tile" style="--tone:var(--neel)"><i class="dot"></i><span class="k">Profit</span><b class="v" data-draw="fin" data-source="money_total" data-field="profit" data-row="0">—</b><span class="s">kept minus costs</span></div>
+    </div>
+    <div class="cb-meter" id="chai-meter">
+      <div class="cb-glass" data-draw="glass" data-source="money_total" role="img" aria-label="Chai fund glass"><i></i></div>
+      <div><p class="big" data-draw="meter" data-source="money_total">—</p><p class="small"><span class="fun">The chai fund. Fills up as Play pays you. Cracks when someone asks for a refund.</span><span class="plain">Progress towards the first ₹10,000 kept.</span></p></div>
+    </div>
+    <div class="cb-tablewrap">
+      <table class="cb-table" data-source="money" data-row-key="slug">
+        <thead><tr>
+          <th aria-label="Play icon"></th><th data-field="name">Game</th><th class="num" data-field="sales">Sales</th><th class="num" data-field="gross">Gross</th>
+          <th class="num" data-field="google_fee">Google fee</th><th class="num" data-field="refunds">Refunds</th><th class="num" data-field="net">Kept</th>
+          <th class="num" data-field="costs">Costs</th><th class="num" data-field="profit">Profit</th>
+        </tr></thead>
+        <tbody data-draw="finrows" data-source="money art"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="cb-sect" id="pipeline">
+    <h2><span class="fun">Next station: Google Play 🚆</span><span class="plain">Release pipeline</span></h2>
+    <p class="cb-sub"><span class="fun">Every stage is a coach on the local. Last stop: the Play Store. Doors open on the left. Probably.</span><span class="plain">How far each game has travelled, from first build to the Play Store.</span></p>
+    <div class="cb-pipe" data-draw="pipe" data-source="stages" role="img" aria-label="Games by release stage"></div>
+    <ul class="cb-legend" data-draw="legend" data-source="stages"></ul>
+  </section>
+
+  <section class="cb-sect" id="shame">
+    <h2><span class="fun">Hall of shame 💀</span><span class="plain">Longest waits and biggest gaps</span></h2>
+    <p class="cb-sub"><span class="fun">The leaderboard nobody wants to top.</span><span class="plain">Which games have waited longest or drifted furthest from Play.</span></p>
+    <ol class="cb-shame" data-draw="shame" data-source="games play"></ol>
+  </section>
+
+  <section class="cb-sect" id="games">
+    <h2>Games</h2>
+    <p class="cb-sub">Tap a game for versions, Play tracks and links.</p>
+    <div class="cb-chips" role="group" aria-label="Filter games">
+      <button class="cb-chip" type="button" data-filter="all" aria-pressed="true">All <span class="n" data-draw="chipn" data-k="all"></span></button>
+      <button class="cb-chip" type="button" data-filter="play" aria-pressed="false">On Play <span class="n" data-draw="chipn" data-k="play"></span></button>
+      <button class="cb-chip" type="button" data-filter="review" aria-pressed="false">In review <span class="n" data-draw="chipn" data-k="review"></span></button>
+      <button class="cb-chip" type="button" data-filter="web" aria-pressed="false">Web only <span class="n" data-draw="chipn" data-k="web"></span></button>
+      <button class="cb-chip" type="button" data-filter="action" aria-pressed="false">Needs action <span class="n" data-draw="chipn" data-k="action"></span></button>
+    </div>
+    <div class="cb-grid" data-draw="grid" data-source="games play art money launches reviews ratings"></div>
+  </section>
+
+  <section class="cb-sect" id="ledger">
+    <h2>Ledger</h2>
+    <p class="cb-sub">Every game in one table. Versions are read from each project's Android build file at scan time.</p>
+    <div class="cb-tablewrap">
+      <table class="cb-table" data-source="games" data-row-key="slug">
+        <thead><tr>
+          <th aria-label="Play icon"></th><th data-field="name">Game</th><th data-field="play_status">Status</th><th data-field="package">Package</th>
+          <th data-field="version_name">Version</th><th data-field="version_code">Code</th>
+          <th data-field="last_local_change">Last local change</th><th data-field="scanned_at">Scanned</th>
+        </tr></thead>
+        <tbody data-draw="rows" data-source="games play art"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <details id="connect">
+    <summary>How the Play connection works</summary>
+    <p>A script on the studio Mac, <code>play_sync.py</code>, signs in to Google Play with a read-only service account each morning and saves a snapshot: tracks and release status, recent reviews and ratings, crash and ANR rates, and whether the public store page exists. This page shows only that snapshot. The key stays on the Mac and is never part of this page.</p>
+    <p>Play's API does not say "in review", so review status comes from the release notes until the store page goes public. Install counts come from Play's monthly reports and are not connected yet.</p>
+  </details>
+
+  <section class="cb-about cb-sect" id="about">
+    <span class="cb-tape l" aria-hidden="true"></span><span class="cb-tape r" aria-hidden="true"></span>
+    <div class="cb-about-grid">
+      <div class="cb-pin"><div class="cb-polaroid"><img class="cb-face" src="../img/dev-karthik.webp" alt="Cartoon portrait of Karthik" width="360" height="360"><span>me, pre-chai, post-hope</span></div></div>
+      <div>
+        <h2>Dev log <span class="cb-skull" aria-hidden="true">💀</span> <em>(one-man army, zero chill)</em><svg class="cb-scribble" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 40 2, 70 13, 110 7 S 180 3, 220 8 S 280 11, 298 5"/></svg></h2>
+        <p class="cb-role">Karthik Shetty · CEO, CTO, intern, QA, chai-wala and emotional support human of Chai Break Studios</p>
+        <div class="cb-stickers"><span class="cb-sticker"><span data-draw="sum" data-source="summary" data-field="total" data-row="0">—</span> games</span><span class="cb-sticker">1 human</span><span class="cb-sticker">∞ cutting chai</span><span class="cb-sticker">0 sleep</span><span class="cb-sticker">3 braincells (shared)</span></div>
+        <p>Hi, I'm Karthik. I make tiny games about desi life: gully cricket, the chai tapri, the Mumbai local, and Mummy's chappal, which has a 100% hit rate and zero cooldown. If you survived one, congrats bestie, you've been <span class="cb-hl">beta-testing since birth</span>.</p>
+        <p>Chai Break Studios is me, one overheating laptop and Claude as my co-dev. We shipped <span data-draw="sum" data-source="summary" data-field="total" data-row="0">—</span> games in a few weeks. Flex or cry for help? <span class="cb-hl pink">Yes.</span> My sleep schedule flatlined in week one and nobody showed up to the funeral. Not even me. I was debugging.</p>
+        <p>Currently in my Google Play review era: submit, refresh, stare at the wall, refresh again. The 14-day tester rule is my villain origin story and I'm still stuck in act one. If a game crashes, no it didn't, that's <span class="cb-hl">lore</span>.</p>
+        <p>Hobbies include arguing with a compiler at 4am and calling it self-care. My will is sorted: the chai goes to the testers, the bugs go to whoever taps "report". The obituary will read: <i>"died doing what he loved: fixing one typo."</i> Delulu? Maybe. Shipping? Always.</p>
+        <div class="cb-patch">
+          <h3>Patch notes: me.exe</h3>
+          <ol>
+            <li><b>v0.1</b><span>Spawned. No tutorial. Zero stars, would not recommend.</span></li>
+            <li><b>v1.0</b><span>Discovered gully cricket. Broke one window. Respawned at Mummy's chappal.</span></li>
+            <li><b>v2.0</b><span>Got a laptop. Touched grass for the last time. RIP grass.</span></li>
+            <li><b>v<span data-draw="sum" data-source="summary" data-field="total" data-row="0">—</span>.0</b><span>Shipped <span data-draw="sum" data-source="summary" data-field="total" data-row="0">—</span> games. Lost the plot, kept the bugs.</span></li>
+            <li><b>v<span data-draw="sum" data-source="summary" data-field="total" data-row="0">—</span>.1</b><span>Hotfix: chai intake +200%. <s>Sleep</s> still not found. Won't fix.</span></li>
+          </ol>
+        </div>
+        <p class="cb-sig">Karthik ✌️<small>powered by cutting chai, spite and zero rest days</small></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+window.cb = (() => {
+  const h = (tag, attrs, ...kids) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) if (v != null && v !== false) el.setAttribute(k, v === true ? '' : v);
+    for (const k of kids.flat()) if (k != null && k !== false) el.append(k instanceof Node ? k : String(k));
+    return el;
+  };
+  // [plain label, css class, fun label]. Fun labels show unless serious mode is on; the plain meaning never changes.
+  const STATUS = {
+    'production-live': ['Live on Play', 'live', "She's out. She's thriving"],
+    'production-review': ['In review', 'review', 'In the trenches'],
+    'internal-live': ['Internal testing', 'internal', 'Group chat only'],
+    'closed-live': ['Closed testing', 'internal', 'Besties testing'],
+    'closed-review': ['Closed test in review', 'review', "Google's reviewing, pray"],
+    'web-only': ['Web demo', 'web', 'Lives in the laptop'],
+    'in-development': ['Building', 'dev', 'Cooking'],
+    'unknown': ['Unknown', 'unknown', 'Lost the plot'],
+  };
+  let serious = false; try { serious = localStorage.getItem('cb-serious') === '1'; } catch (e) {}
+  const TONES = ['--chai', '--kesar', '--elaichi', '--gulab', '--neel', '--haldi', '--masala'];
+  const tone = (s) => { let x = 0; for (const c of String(s)) x = (x * 31 + c.charCodeAt(0)) >>> 0; return `var(${TONES[x % TONES.length]})`; };
+  const initials = (n) => String(n).replace(/[^A-Za-z ]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+  const fmt = (iso) => { if (!iso) return '—'; const d = new Date(iso); return isNaN(d) ? '—' : d3.timeFormat('%-d %b, %H:%M')(d); };
+  const safeUrl = (u) => typeof u === 'string' && /^https?:\/\//.test(u) ? u : null;
+  const motion = () => matchMedia('(prefers-reduced-motion: no-preference)').matches;
+  // A game whose public store page exists is live, whatever the notes say.
+  const status = (r, pr) => (pr && pr.store_public ? 'production-live' : r.play_status);
+  const FILTERS = {
+    all: () => true,
+    play: (r, s) => /internal|closed|review|live/.test(s),
+    review: (r, s) => s === 'production-review',
+    web: (r, s) => s === 'web-only',
+    action: (r) => !!r.attention,
+  };
+  // Images: screenshots and covers by game slug, Play listing icons by package. No icon row = not on a store listing yet = blank slot.
+  const art = () => { const a = dash.data('art'); const m = new Map(); if (a.status === 'ok') for (const r of a.data) if (/^img\/[\w.-]+\.webp$/.test(r.url)) m.set(r.kind + ':' + r.key, r.url); return m; };
+  const icon = (m, r, sm) => { const u = r.package && m.get('icon:' + r.package);
+    return u ? h('img', {class: 'cb-icon' + (sm ? ' sm' : ''), src: u, alt: r.name + ' Play Store icon', loading: 'lazy'})
+             : h('span', {class: 'cb-icon blank' + (sm ? ' sm' : ''), title: 'No Play Store icon yet', 'aria-hidden': 'true'}); };
+  const lab = (key) => { const s = STATUS[key] || STATUS.unknown; return cb.serious ? s[0] : s[2]; };
+  const days = (iso) => iso ? Math.max(0, Math.floor((Date.now() - new Date(iso)) / 864e5)) : null;
+  return {h, STATUS, tone, initials, fmt, safeUrl, motion, status, FILTERS, art, icon, lab, days, serious, filter: 'all', open: null, counted: {}};
+})();
+
+dash.calc('summary', {
+  title: 'Studio totals',
+  description: 'Counts of games by status (live if the public store page exists, else the release notes), plus whether the Play snapshot is connected.',
+  inputs: ['games', 'play'],
+  fn: (games, play) => {
+    const pub = new Set(play.filter((p) => p.store_public).map((p) => p.package));
+    const st = games.map((g) => (pub.has(g.package) ? 'production-live' : g.play_status));
+    const by = (s) => st.filter((x) => x === s).length;
+    return [{
+      total: games.length,
+      on_play: by('internal-live') + by('closed-live') + by('closed-review') + by('production-review') + by('production-live'),
+      in_review: by('production-review'),
+      play_split: `${by('production-live')} live · ${by('internal-live') + by('closed-live') + by('closed-review') + by('production-review')} testing or in review`,
+      web_only: by('web-only'),
+      play_api: play.some((p) => p.connected) ? 'Connected' : 'Not connected',
+      play_synced: play.map((p) => p.synced_at).filter(Boolean).sort().pop() || null,
+      scanned: games.map((g) => g.scanned_at).filter(Boolean).sort().pop() || null,
+    }];
+  },
+});
+
+dash.calc('stages', {
+  title: 'Games by release stage',
+  description: 'How many games sit at each stage, from building to live on Play.',
+  inputs: ['games', 'play'],
+  fn: (games, play) => {
+    const pub = new Set(play.filter((p) => p.store_public).map((p) => p.package));
+    const order = [['in-development', 'Building'], ['web-only', 'Web demo'], ['internal-live', 'Internal testing'], ['closed-review', 'Closed test in review'], ['closed-live', 'Closed testing'],
+      ['production-review', 'In review'], ['production-live', 'Live on Play'], ['unknown', 'Unknown']];
+    const st = games.map((g) => (pub.has(g.package) ? 'production-live' : g.play_status));
+    return order.map(([stage, label]) => ({stage, label, games: st.filter((x) => x === stage).length})).filter((r) => r.games > 0);
+  },
+});
+
+// Night mode: midnight to 5am local time.
+{ const hr = new Date().getHours(); if (hr < 5) document.getElementById('cb')?.classList.add('night'); }
+if (cb.serious) document.getElementById('cb')?.classList.add('serious');
+
+const STAGE_TONE = {'in-development': 'var(--kesar)', 'web-only': 'var(--neel)', 'internal-live': 'var(--elaichi)', 'closed-live': 'var(--haldi)', 'closed-review': 'var(--gulab)',
+  'production-review': 'var(--color-warn)', 'production-live': 'var(--color-ok)', 'unknown': 'var(--color-bad)'};
+
+dash.draw('sum', (el) => {
+  const s = dash.data('summary');
+  if (s.status !== 'ok' || !s.data || !s.data[0]) { el.textContent = '—'; return; }
+  const f = el.dataset.field, v = s.data[0][f];
+  if (/synced|scanned/.test(f)) { el.textContent = cb.fmt(v); return; }
+  if (typeof v !== 'number' || !cb.motion() || cb.counted[f] === v) { el.textContent = v ?? '—'; cb.counted[f] = v; return; }
+  cb.counted[f] = v;
+  const t0 = performance.now(), dur = 900;
+  const step = (t) => { const k = Math.min(1, (t - t0) / dur); el.textContent = Math.round(v * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+});
+
+dash.draw('pipe', (el) => {
+  const s = dash.data('stages');
+  if (s.status === 'error') { el.replaceChildren(cb.h('span', {class: 'cb-msg', style: 'margin:auto'}, 'Could not load the stages.')); return; }
+  if (s.status !== 'ok' || !s.data) { el.replaceChildren(); return; }
+  const grow = cb.motion() && !el.dataset.grown;
+  const segs = s.data.map((r) => cb.h('div', {class: 'cb-seg', style: `--tone:${STAGE_TONE[r.stage]};flex-grow:${grow ? 0.001 : r.games}`, title: `${cb.lab(r.stage)} (${r.label}): ${r.games}`}, r.games));
+  el.replaceChildren(...segs);
+  el.setAttribute('aria-label', 'Games by release stage: ' + s.data.map((r) => `${r.label} ${r.games}`).join(', '));
+  if (grow) {
+    el.dataset.grown = '1';
+    requestAnimationFrame(() => requestAnimationFrame(() => segs.forEach((d, i) => { d.style.flexGrow = s.data[i].games; })));
+  }
+});
+
+dash.draw('legend', (ul) => {
+  const s = dash.data('stages');
+  if (s.status !== 'ok' || !s.data) { ul.replaceChildren(); return; }
+  ul.replaceChildren(...s.data.map((r) => cb.h('li', {style: `--tone:${STAGE_TONE[r.stage]}`, title: r.label}, cb.h('i'), cb.lab(r.stage), ' ',
+    cb.h('b', {'data-source': 'stages', 'data-field': 'games', 'data-where': 'stage=' + encodeURIComponent(r.stage)}, r.games))));
+});
+
+cb.attnView = (r) => {
+  const {h} = cb, items = String(r.attention || '').split(' | ').filter(Boolean);
+  if (!items.length) return null;
+  const bad = r.play_status === 'unknown' || items.some((a) => /temporary|unknown/i.test(a));
+  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Needs your attention' : 'Your problems 🔥'),
+    h('ul', {class: 'cb-attn'}, h('li', {class: bad ? 'bad' : null}, cb.serious ? null : h('span', {class: 'rank', 'aria-hidden': 'true'}, bad ? '💀' : items.length > 1 ? '🔥' : '👀'),
+      h('div', {class: 'body'}, h('ul', null, items.map((a) => h('li', null, a)))))));
+};
+
+cb.clockView = (r, pr) => {
+  if (!(/closed|production/.test(r.play_status) || r.closed_since)) return null;
+  const {h} = cb;
+  const R = 30, C = 2 * Math.PI * R;
+  // Play's rule: 12+ testers opted in, then 14 days in a row. The ring shows testers until 12, then days.
+  const info = (r) => {
+    const st = cb.status(r, pr);
+    const t = r.testers_opted_in;
+    if (/production/.test(st)) return {st, phase: 'done', frac: 1};
+    if (!r.closed_since) return {st, phase: 'review', frac: 0, t};
+    if (t == null || t < 12) return {st, phase: 'testers', frac: (t || 0) / 12, t};
+    const d = r.clock_since ? Math.min(14, cb.days(r.clock_since + 'T00:00:00') + 1) : 0;
+    return {st, phase: d >= 14 ? 'ready' : 'days', frac: d / 14, t, d};
+  };
+  const x = info(r);
+  if (x.phase === 'done') return null;
+  {
+    const ring = x.phase === 'done' || x.phase === 'ready' ? '#2e9d4f' : x.phase === 'days' ? '#e0912f' : '#3d6f99';
+    const big = x.phase === 'done' ? '✓' : x.phase === 'review' ? '–' : x.phase === 'testers' ? String(x.t ?? '?') : String(x.d);
+    const small = x.phase === 'done' ? 'done' : x.phase === 'review' ? 'waiting' : x.phase === 'testers' ? 'of 12' : 'of 14 days';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 74 74'); svg.setAttribute('class', 'cb-ring'); svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', x.phase === 'testers' ? `${x.t ?? 'unknown'} of 12 testers opted in` : x.phase === 'days' ? `Day ${x.d} of 14` : small);
+    svg.style.setProperty('--ring', ring);
+    svg.innerHTML = `<circle class="bg" cx="37" cy="37" r="${R}"/><circle class="fg" cx="37" cy="37" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - x.frac)}"/>` +
+      `<text x="37" y="33">${big}</text><text class="sm" x="37" y="50">${small}</text>`;
+    const need = x.t == null ? null : Math.max(0, 12 - x.t);
+    const line = x.phase === 'done' ? 'Closed test requirement met'
+      : x.phase === 'review' ? `${cb.lab(x.st)} · clock not started`
+      : x.phase === 'testers' ? `${x.t ?? '?'} of 12 testers opted in · 14-day clock starts at 12` + (r.testers_checked ? ` · checked ${d3.timeFormat('%-d %b')(new Date(r.testers_checked + 'T00:00:00'))}` : '')
+      : `Day ${x.d} of 14 with ${x.t} testers`;
+    const quip = cb.serious ? null
+      : x.phase === 'done' ? '14 days survived. Production review era unlocked.'
+      : x.phase === 'review' ? 'Clock starts when Google approves. Manifesting.'
+      : x.phase === 'testers' ? (x.t == null ? 'Check the opted-in count in Play Console. Count your besties.'
+          : x.t === 0 ? '0 testers. Even your mom hasn\'t opted in. Start sliding into DMs.'
+          : `Need ${need} more besties. Start sliding into DMs.`)
+      : x.phase === 'ready' ? 'Done! Go apply for production, bestie.' : `${14 - x.d} days to go. Don't let them uninstall.`;
+    return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Closed test progress' : 'The 14-day tester clock ⏳'),
+      h('ul', {class: 'cb-clock'}, h('li', {id: 'clock-' + r.slug}, svg,
+        h('div', null, h('span', {class: 'ln'}, line), quip ? h('span', {class: 'quip'}, quip) : null))),
+      h('p', {class: 'cb-lmap-asof'}, 'Play wants 12+ testers opted in for 14 days in a row before production. Counts come from the game\'s Play Console dashboard.'));
+  }
+};
+
+dash.draw('launch', {
+  mount: (el) => ({timer: null}),
+  update: (el, made) => {
+    const g = dash.data('games'), p = dash.data('play');
+    const {h} = cb;
+    if (g.status !== 'ok' || p.status !== 'ok') { if (!cb.preview) el.replaceChildren(); if (!cb.preview) return; }
+    const names = new Map((g.status === 'ok' ? g.data : []).map((r) => [r.package, r.name]));
+    const live = (p.status === 'ok' ? p.data : []).filter((r) => r.store_public).map((r) => r.package);
+    let seen = []; try { seen = JSON.parse(localStorage.getItem('cb-seen-live') || '[]'); } catch (e) {}
+    const fresh = live.filter((x) => !seen.includes(x));
+    const show = cb.preview ? ['Your next game'] : fresh.map((x) => names.get(x) || x);
+    if (!show.length) { el.replaceChildren(); return; }
+    const close = h('button', {type: 'button'}, 'Close');
+    close.onclick = () => { cb.preview = false; el.replaceChildren(); };
+    const who = show.join(', ');
+    el.replaceChildren(h('div', {class: 'party', role: 'status'},
+      h('b', null, cb.serious ? `${who} ${show.length > 1 ? 'are' : 'is'} now live on Google Play.` : `🎉 ${who} ${show.length > 1 ? 'are' : 'is'} LIVE on Google Play! She's out. She's thriving.`), close));
+    if (!cb.preview) { try { localStorage.setItem('cb-seen-live', JSON.stringify([...new Set([...seen, ...live])])); } catch (e) {} }
+    cb.preview = false;
+    if (!cb.motion()) return;
+    const cv = h('canvas', {'aria-hidden': 'true'}); el.append(cv);
+    const W = cv.width = el.clientWidth * 2, H = cv.height = 1120, ctx = cv.getContext('2d');
+    const cols = ['#e0912f', '#ffd23f', '#2e9d4f', '#c2577a', '#3d6f99', '#ffffff'];
+    const bits = Array.from({length: 180}, () => ({x: W / 2 + (Math.random() - .5) * W * .3, y: 520, vx: (Math.random() - .5) * 26, vy: -Math.random() * 30 - 10,
+      w: 8 + Math.random() * 10, h: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.floor(Math.random() * cols.length)]}));
+    const t0 = performance.now();
+    const frame = (t) => {
+      ctx.clearRect(0, 0, W, H);
+      for (const b of bits) { b.vy += .9; b.vx *= .99; b.x += b.vx; b.y += b.vy; b.r += b.vr;
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r); ctx.fillStyle = b.c; ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); ctx.restore(); }
+      if (t - t0 < 3200) made.timer = requestAnimationFrame(frame); else cv.remove();
+    };
+    made.timer = requestAnimationFrame(frame);
+  },
+  unmount: (el, made) => { if (made?.timer) cancelAnimationFrame(made.timer); },
+});
+
+
+// Per-game extras shown inside a game's detail panel: where it's launched (launches.json) and its reviews.
+cb.LST = {live: ['Live', 'Live 🟢'], review: ['In review', 'Under review, pray 👀'], blocked: ['Blocked', 'Stuck 🧱'], rejected: ['Rejected', 'Got ghosted 💔'], todo: ['To do', 'Not started 💤']};
+cb.stars = (n) => { const k = Math.max(0, Math.min(5, Math.round(n || 0))); return cb.h('span', {class: 'stars', 'aria-label': `${k} of 5 stars`}, '★'.repeat(k), cb.h('i', null, '★'.repeat(5 - k))); };
+cb.reply = (r) => 'https://play.google.com/console/u/0/developers/6598622969787047436/' + (r && r.play_app_id ? `app/${r.play_app_id}/user-feedback/reviews` : 'app-list');
+cb.launchesOf = (slug) => { const l = dash.data('launches'); return l.status === 'ok' ? l.data.filter((x) => x.game === slug) : []; };
+cb.reviewsOf = (pkg) => { const v = dash.data('reviews'); return v.status === 'ok' && pkg ? v.data.filter((x) => x.package === pkg) : []; };
+cb.KINDS = [['store', 'Game stores', 'Game stores 🛒'], ['web', 'Web', 'Web 🌐'], ['social', 'Social media', 'Social media 📣'], ['money', 'Payments and ads', 'Payments and ads 💸'], ['other', 'Other', 'Other']];
+cb.kindOf = (r) => r.kind || (/instagram|facebook|youtube|twitter|x\.com/i.test(r.platform) ? 'social' : 'store');
+cb.storeLine = (rows) => { const st = rows.filter((r) => cb.kindOf(r) === 'store'); return st.length ? `${st.filter((r) => r.status === 'live').length} of ${st.length} game stores live` : null; };
+cb.launchView = (rows) => {
+  const {h} = cb, order = ['live', 'review', 'blocked', 'rejected', 'todo'];
+  const you = rows.filter((r) => r.waiting_on === 'You');
+  const asof = rows.map((r) => r.as_of).filter(Boolean).sort().pop();
+  const card = (r) => {
+    const st = cb.LST[r.status] || [r.status, r.status], url = cb.safeUrl(r.link), mine = r.waiting_on === 'You';
+    const on = !r.waiting_on || r.waiting_on === 'none' ? (cb.serious ? 'Nothing pending' : 'Chilling ✨') : (mine ? (cb.serious ? 'Waiting on you' : '👑 Waiting on you') : `Waiting on ${r.waiting_on}`);
+    return h('li', {class: order.includes(r.status) ? r.status : ''},
+      h('div', {class: 'top'}, h('span', {class: 'pf'}, r.platform), h('span', {class: 'st'}, st[cb.serious ? 0 : 1])),
+      r.metric && r.metric !== '-' ? h('span', {class: 'm'}, r.metric) : null, h('span', {class: 'd'}, r.detail || ''),
+      r.pays ? h('span', {class: 'pay'}, '💰 ' + r.pays) : null,
+      h('div', {class: 'foot'}, h('span', {class: 'on' + (mine ? ' you' : '')}, on), url ? h('a', {href: url, target: '_blank', rel: 'noopener'}, 'Open ↗') : null));
+  };
+  const groups = cb.KINDS.map(([k, plain, fun]) => [k, cb.serious ? plain : fun, rows.filter((r) => cb.kindOf(r) === k).sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status))]).filter((g) => g[2].length);
+  const chip = (k, label) => { const g = rows.filter((r) => cb.kindOf(r) === k); return g.length ? h('li', null, `${g.filter((r) => r.status === 'live').length} of ${g.length} ${label} live`) : null; };
+  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Where it is launched' : 'Where it is launched 🗺️'),
+    h('ul', {class: 'cb-lmap-sum'}, chip('store', 'game stores'), chip('web', 'web'), chip('social', 'social'),
+      h('li', null, (cb.serious ? '' : '👑 ') + `${you.length} waiting on you`)),
+    ...groups.map(([k, label, list]) => h('div', {class: 'cb-lgroup'}, h('h4', null, label), h('ul', {class: 'cb-lmap'}, ...list.map(card)))),
+    you.length ? h('ol', {class: 'cb-lmap-todo'}, h('b', {style: 'margin-left:-18px'}, cb.serious ? 'Your to-dos' : 'Your homework, owner-ji 📝'),
+      ...you.map((r) => h('li', null, h('b', null, r.platform + ': '), r.detail))) : null,
+    asof ? h('p', {class: 'cb-lmap-asof'}, `Kept by hand in launches.json · last updated ${d3.timeFormat('%-d %b %Y')(new Date(asof + 'T00:00:00'))}`) : null);
+};
+cb.draftBox = (text) => {
+  const {h} = cb, t = h('p', {class: 'txt'}, text), btn = h('button', {type: 'button'}, 'Copy reply');
+  btn.onclick = async () => {
+    try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied ✓'; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(t); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = 'Selected, press ⌘C'; }
+    setTimeout(() => { btn.textContent = 'Copy reply'; }, 2500);
+  };
+  return h('div', {class: 'draft'}, h('span', {class: 'lb'}, cb.serious ? 'Draft reply' : 'Draft reply (Claude wrote it, you post it) ✍️'), t, btn);
+};
+cb.reviewView = (r, pr, revs) => {
+  const {h} = cb, rt = dash.data('ratings');
+  const reads = (rt.status === 'ok' ? rt.data : []).filter((x) => x.package === r.package && x.rating != null);
+  const first = reads[0], delta = first && pr?.store_rating != null && reads.length > 1 ? pr.store_rating - first.rating : null;
+  const avg = revs.length ? revs.reduce((a, v) => a + v.stars, 0) / revs.length : null, open = revs.filter((v) => !v.replied).length;
+  const line = [pr?.store_rating != null ? `${pr.store_rating.toFixed(1)}★ overall from ${pr.store_rating_count || '?'} ratings` : 'Overall rating not shown by Google yet',
+    delta != null ? `${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(1)} since ${d3.timeFormat('%-d %b')(new Date(first.date + 'T00:00:00'))}` : null,
+    pr?.store_downloads ? `${pr.store_downloads} downloads` : null,
+    `${revs.length} written review${revs.length === 1 ? '' : 's'}` + (avg != null ? `, avg ${avg.toFixed(1)}★` : ''),
+    open ? `${open} not replied` : revs.length ? 'all replied' : null].filter(Boolean).join(' · ');
+  return h('div', {class: 'cb-xtra'}, h('h3', null, cb.serious ? 'Ratings and reviews' : 'What the people are saying ⭐'),
+    h('p', {class: 'cb-xline'}, line),
+    revs.length ? h('ul', {class: 'cb-revs'}, ...revs.map((v) => h('li', {class: v.stars <= 2 ? 'low' : ''}, cb.stars(v.stars),
+      v.text ? h('q', null, v.text) : h('span', {class: 'meta'}, 'Stars only, no words.'),
+      v.draft && !v.replied ? cb.draftBox(v.draft) : null,
+      h('div', {class: 'meta'}, h('span', null, [v.author || 'A Google user', v.version ? 'v' + v.version : null, v.at ? d3.timeFormat('%-d %b')(new Date(v.at)) : null].filter(Boolean).join(' · ')),
+        v.replied ? h('span', {class: 'rp done'}, 'Replied') : h('a', {class: 'rp', href: cb.reply(r), target: '_blank', rel: 'noopener'}, v.draft ? 'Paste in Play Console ↗' : (cb.serious ? 'Reply in Play Console ↗' : 'Say thanks ↗'))))))
+      : h('p', {class: 'cb-xline'}, cb.serious ? 'No written reviews yet.' : 'No reviews yet. Bribe your cousins.'),
+    h('p', {class: 'cb-lmap-asof'}, 'Google only shares written reviews for about a week, so the morning sync keeps a copy of every one.'));
+};
+
+
+// Downloads headline: Play's daily install reports per game (play.json installs_*), which lag a few days.
+cb.dl = () => {
+  const g = dash.data('games'), p = dash.data('play');
+  if (g.status !== 'ok') return null;
+  const play = new Map((p.status === 'ok' ? p.data : []).map((r) => [r.package, r]));
+  // Prefer the near-live Play Console count (read each morning); fall back to Play's lagging install reports.
+  const rows = g.data.map((r) => { const pr = play.get(r.package) || {};
+    const live = r.console_installs != null;
+    return {game: r, n: live ? r.console_installs : pr.installs_total, active: live ? r.console_active : pr.active_devices, live, pr};
+  }).filter((x) => x.n != null).sort((a, b) => b.n - a.n);
+  const checked = rows.filter((x) => x.live).map((x) => x.game.console_checked).filter(Boolean).sort().pop();
+  const through = rows.filter((x) => !x.live).map((x) => x.pr.installs_through).filter(Boolean).sort().pop();
+  return {rows, total: rows.reduce((a, x) => a + x.n, 0), active: rows.reduce((a, x) => a + (x.active || 0), 0), checked, through};
+};
+cb.dlOf = (r, pr) => r.console_installs != null ? {n: r.console_installs, active: r.console_active} : pr?.installs_total != null ? {n: pr.installs_total, active: pr.active_devices} : null;
+dash.draw('dlnum', (el) => { const d = cb.dl(); el.textContent = d ? d.total.toLocaleString('en-IN') : '—'; });
+dash.draw('dlsub', (el) => {
+  const d = cb.dl(); if (!d) { el.textContent = '—'; return; }
+  const fmt = (x) => d3.timeFormat('%-d %b')(new Date(x + 'T00:00:00'));
+  const src = [d.checked ? `live from Play Console, checked ${fmt(d.checked)}` : null, d.through ? `Play reports up to ${fmt(d.through)}` : null].filter(Boolean).join(' · ');
+  el.textContent = `${d.active} active devices · ${src}` + (cb.serious ? '' : ' (every download counts, bestie)');
+});
+dash.draw('dlper', (el) => {
+  const d = cb.dl(); if (!d) { el.replaceChildren(); return; }
+  const {h} = cb, art = cb.art();
+  el.replaceChildren(...d.rows.map((x) => h('li', null, cb.icon(art, x.game, true), h('b', null, x.n.toLocaleString('en-IN')), x.game.name)));
+});
+
+dash.draw('vibe', (el) => {
+  const s = dash.data('summary'), m = dash.data('money_total');
+  if (s.status !== 'ok' || !s.data?.[0]) { el.textContent = '—'; return; }
+  const x = s.data[0], st = dash.data('stages');
+  const inRev = (st.status === 'ok' ? st.data : []).filter((r) => /review/.test(r.stage)).reduce((a, r) => a + r.games, 0);
+  const live = (st.status === 'ok' ? st.data : []).filter((r) => r.stage === 'production-live').reduce((a, r) => a + r.games, 0);
+  const net = m.status === 'ok' && m.data?.[0] ? m.data[0].net : 0, cur = m.data?.[0]?.currency;
+  el.textContent = cb.serious
+    ? `${inRev} in Google review · ${live} live on Play · ${cb.cur(net, cur)} kept · ${x.web_only} web-only · ${x.total} games`
+    : `${inRev} games in Google's review jail, ${live} live, ${cb.cur(net, cur)} earned, 1 dev running on fumes. ${net > 0 ? 'Not rich, but the chai is paid for. W.' : "Mid, but we move."}`;
+});
+
+dash.draw('roast', (el) => {
+  const g = dash.data('games'), p = dash.data('play'), m = dash.data('money_total');
+  if (g.status !== 'ok') { el.textContent = '—'; return; }
+  const rows = g.data, total = rows.length;
+  const web = rows.filter((r) => r.play_status === 'web-only').length;
+  const stale = rows.filter((r) => r.last_local_change).sort((a, b) => a.last_local_change.localeCompare(b.last_local_change))[0];
+  const act = rows.filter((r) => r.attention).length;
+  const inRev = rows.filter((r) => /review/.test(r.play_status)).length;
+  const net = m.status === 'ok' && m.data?.[0] ? m.data[0].net : 0;
+  const lines = [
+    `You made ${total} games and touched grass 0 times. Iconic. Concerning.`,
+    `${web} games still live in the laptop. They've never seen the sun.`,
+    stale ? `${stale.name} hasn't been touched in ${cb.days(stale.last_local_change)} days. Check if it's still breathing.` : null,
+    `${act} games have red flags. You're collecting them like Pokémon.`,
+    `Google has ${inRev} of your games on read. Situationship behaviour.`,
+    net > 0 ? `You earned ${cb.cur(net, m.data[0].currency)}. Don't spend it all on chai. (You will.)` : `${total} games, ₹0 earned. Character development.`,
+    `Your commit messages at 4am are a cry for help and we all see it.`,
+  ].filter(Boolean);
+  const day = Math.floor(Date.now() / 864e5);
+  el.textContent = lines[day % lines.length];
+});
+
+dash.draw('shame', (ol) => {
+  const g = dash.data('games'), p = dash.data('play');
+  const {h} = cb;
+  if (g.status !== 'ok') { ol.replaceChildren(); return; }
+  const play = new Map((p.status === 'ok' ? p.data : []).map((r) => [r.package, r]));
+  const rows = g.data, items = [];
+  const reviewDays = (r) => { const m = /(\d{1,2}) Nov/.exec(r.play_note || ''); if (!m) return null; const d = new Date(new Date().getFullYear(), 10, +m[1]); return Math.max(0, Math.floor((Date.now() - d) / 864e5)); };
+  const waiting = rows.filter((r) => /review/.test(r.play_status)).map((r) => [r, reviewDays(r)]).filter(([, d]) => d != null).sort((a, b) => b[1] - a[1])[0];
+  if (waiting) items.push(['Longest wait', waiting[0].name, cb.serious ? `In Google review for ${waiting[1]} days.` : `In review for ${waiting[1]} days. Google said "seen" and left.`]);
+  const gap = rows.map((r) => { const pr = play.get(r.package); if (!pr || !r.version_code) return null;
+    const onPlay = Math.max(0, ...['internal_codes', 'closed_codes', 'production_codes'].flatMap((k) => String(pr[k] || '').split(',').map(Number).filter(Boolean)));
+    return [r, r.version_code - onPlay]; }).filter((x) => x && x[1] > 0).sort((a, b) => b[1] - a[1])[0];
+  if (gap) items.push(['Biggest Mac-vs-Play gap', gap[0].name, cb.serious ? `Local build is ${gap[1]} version codes ahead of Play.` : `${gap[1]} builds ahead on the laptop. Main character locally, NPC on Play.`]);
+  const stale = rows.filter((r) => r.last_local_change).map((r) => [r, cb.days(r.last_local_change)]).sort((a, b) => b[1] - a[1])[0];
+  if (stale) items.push(['Most neglected', stale[0].name, cb.serious ? `No local changes for ${stale[1]} days.` : `Untouched for ${stale[1]} days. Ghosted by its own dev.`]);
+  const flags = rows.map((r) => [r, String(r.attention || '').split(' | ').filter(Boolean).length]).sort((a, b) => b[1] - a[1])[0];
+  if (flags && flags[1] > 0) items.push(['Most red flags', flags[0].name, cb.serious ? `${flags[1]} open items.` : `${flags[1]} open problems. Toxic, but we love her.`]);
+  ol.replaceChildren(...(items.length ? items.map(([t, w, d]) => h('li', null, h('span', {class: 't'}, t), h('span', {class: 'w'}, w), h('span', {class: 'd'}, d)))
+    : [h('li', null, h('span', {class: 'd'}, 'Nothing to shame. For now.'))]));
+});
+
+dash.draw('chipn', (el) => {
+  const g = dash.data('games'), p = dash.data('play');
+  if (g.status !== 'ok') { el.textContent = ''; return; }
+  const play = new Map((p.status === 'ok' ? p.data : []).map((r) => [r.package, r]));
+  el.textContent = g.data.filter((r) => cb.FILTERS[el.dataset.k](r, cb.status(r, play.get(r.package)))).length;
+});
+
+dash.draw('grid', (el) => {
+  const g = dash.data('games'), p = dash.data('play');
+  const {h, STATUS, fmt, safeUrl, tone, initials} = cb; const art = cb.art();
+  const mo = dash.data('money'); const money = new Map((mo.status === 'ok' && mo.data ? mo.data : []).filter((x) => x.net || x.costs).map((x) => [x.slug, x]));
+  if (g.status === 'error') { el.replaceChildren(h('p', {class: 'cb-msg'}, 'The game list could not be loaded.')); return; }
+  if (g.status !== 'ok') { el.replaceChildren(); return; }
+  const play = new Map((p.status === 'ok' ? p.data : []).map((r) => [r.package, r]));
+  const rows = g.data.filter((r) => cb.FILTERS[cb.filter](r, cb.status(r, play.get(r.package))));
+  const out = [];
+  rows.forEach((r, i) => {
+    const pr = play.get(r.package);
+    const [, cls] = STATUS[cb.status(r, pr)] || STATUS.unknown;
+    const label = cb.lab(cb.status(r, pr));
+    const idle = cb.days(r.last_local_change);
+    const where = 'slug=' + encodeURIComponent(r.slug);
+    const flags = String(r.attention || '').split(' | ').filter(Boolean).length;
+    const open = cb.open === r.slug;
+    const card = h('button', {class: 'cb-card' + (idle != null && idle >= 7 ? ' dusty' : ''), type: 'button', 'aria-expanded': String(open), id: 'game-' + r.slug, style: `--i:${i}`,
+      title: idle != null && idle >= 7 ? `Untouched for ${idle} days` : null},
+      h('div', {class: 'cb-cover' + (art.get('shot:' + r.slug) ? ' shot' : ''), style: `--tone:${tone(r.slug)}`},
+        ...(art.get('shot:' + r.slug)
+          ? [h('span', {class: 'bg', style: `background-image:url("${art.get('shot:' + r.slug)}")`, 'aria-hidden': 'true'}),
+             h('img', {class: 'phone', src: art.get('shot:' + r.slug), alt: r.name + ' screenshot', loading: 'lazy'})]
+          : art.get('cover:' + r.slug) ? [h('img', {class: 'art', src: art.get('cover:' + r.slug), alt: '', loading: 'lazy'})]
+          : [h('span', {class: 'ini', 'aria-hidden': 'true'}, initials(r.name))]),
+        h('span', {class: 'cb-pill ' + cls}, label)),
+      h('div', {class: 'cb-body'},
+        h('span', {class: 'cb-name'}, cb.icon(art, r), h('span', {class: 'nm'}, r.name)),
+        h('span', {class: 'pk'}, r.package || (r.folder_found ? 'No Android project yet' : 'Folder not found')),
+        r.version_name ? h('span', {class: 'ver'}, 'v', h('span', {'data-source': 'games', 'data-field': 'version_name', 'data-where': where}, r.version_name),
+          ' · code ', h('span', {'data-source': 'games', 'data-field': 'version_code', 'data-where': where}, r.version_code)) : null,
+        money.get(r.slug) ? h('span', {class: 'cb-earn'}, 'Kept ' + cb.cur(money.get(r.slug).net, money.get(r.slug).currency) + ' · profit ' + cb.cur(money.get(r.slug).profit, money.get(r.slug).currency)) : null,
+        cb.dlOf(r, pr) ? h('span', {class: 'cb-dl'}, `📲 ${cb.dlOf(r, pr).n} downloads · ${cb.dlOf(r, pr).active ?? '?'} active`) : null,
+        cb.reviewsOf(r.package).length ? h('span', {class: 'cb-hint'}, `⭐ ${cb.reviewsOf(r.package).length} reviews` + (cb.reviewsOf(r.package).some((v) => !v.replied) ? ' · reply pending' : '')) : null,
+        cb.storeLine(cb.launchesOf(r.slug)) ? h('span', {class: 'cb-hint'}, '🛒 ' + cb.storeLine(cb.launchesOf(r.slug))) : null,
+        flags ? h('span', {class: 'cb-flag'}, flags === 1 ? '1 thing needs action' : flags + ' things need action') : null,
+        h('span', {class: 'when'}, 'Scanned ' + fmt(r.scanned_at) + ' · Play ' + (pr?.connected ? 'synced ' + fmt(pr.synced_at) : r.package ? 'not connected' : 'n/a'))));
+    card.onclick = () => { cb.open = open ? null : r.slug; document.getElementById('cb')?.classList.remove('enter'); dash.draw('grid'); };
+    out.push(card);
+    if (open) out.push(detail(r, pr));
+  });
+  el.replaceChildren(...(out.length ? out : [h('p', {class: 'cb-msg'}, 'No games match this filter.')]));
+
+  function detail(r, pr) {
+    const dl = (pairs) => h('dl', null, pairs.filter(Boolean).flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v ?? '—')]));
+    const link = (u, t) => safeUrl(u) ? h('a', {href: u, target: '_blank', rel: 'noopener'}, t) : null;
+    const pct = (x) => x == null ? 'Not enough users yet' : (x * 100).toFixed(2) + '%';
+    const rel = (n, c, s) => [n, c && '(code ' + c + ')', s].filter(Boolean).join(' ') || '—';
+    const playPairs = pr && pr.connected ? [
+      ['Internal', rel(pr.internal_release, pr.internal_codes, pr.internal_status)],
+      ['Closed', rel(pr.closed_release, pr.closed_codes, pr.closed_status)],
+      ['Production', rel(pr.production_release, pr.production_codes, pr.production_status)],
+      ['Store page', pr.store_public ? 'Public' : 'Not public yet'],
+      pr.store_public ? ['Store rating', pr.store_rating != null ? pr.store_rating.toFixed(1) + ' ★ (' + (pr.store_rating_count || '?') + ' ratings)' : 'Not shown yet'] : null,
+      pr.store_downloads ? ['Downloads', pr.store_downloads] : null,
+      ['Crash rate 28d', pct(pr.crash_rate_28d)],
+      ['ANR rate 28d', pct(pr.anr_rate_28d)],
+      r.console_installs != null ? ['Play Console (live)', `${r.console_installs} installs · ${r.console_first_opens ?? '?'} first opens · ${r.console_active ?? '?'} active devices (checked ${d3.timeFormat('%-d %b')(new Date(r.console_checked + 'T00:00:00'))})`] : null,
+      pr.installs_total != null ? ['Install reports', `${pr.installs_total} total · ${pr.installs_7d} in last 7 days · ${pr.active_devices} active devices · ${pr.uninstalls_total} uninstalls`] : ['Installs', 'No install report from Play yet'],
+      pr.installs_through ? ['Installs up to', d3.timeFormat('%-d %b')(new Date(pr.installs_through + 'T00:00:00')) + ' (Play publishes these a few days late; includes testers)'] : null,
+      pr.error ? ['Sync error', pr.error] : null,
+      ['Synced', fmt(pr.synced_at)],
+    ] : [['Status', r.package ? 'Not connected yet' : 'No Play package'], pr ? ['Checked', fmt(pr.synced_at)] : null];
+    const dev = 'https://play.google.com/console/u/0/developers/6598622969787047436/';
+    return h('div', {class: 'cb-detail', id: 'detail-' + r.slug},
+      cb.attnView(r), cb.clockView(r, pr),
+      h('div', null, h('h3', null, 'Release notes'),
+        dl([['Status', (STATUS[r.play_status] || STATUS.unknown)[0]], ['Notes', r.play_note],
+            ['Play app id', r.play_app_id], ['Notes file', r.notes_file ? r.notes_file + ' (' + fmt(r.notes_updated) + ')' : null]])),
+      h('div', null, h('h3', null, 'Project folder'),
+        dl([['Folder', r.folder ? r.folder + (r.folder_found ? '' : ' (not found)') : 'Unknown'], ['Package', r.package],
+            ['Version', r.version_name ? r.version_name + ' (code ' + r.version_code + ')' : null],
+            ['Android project', r.has_android ? 'Yes' : 'No'], ['Last local change', fmt(r.last_local_change)],
+            ['Claude session', r.session_name], ['Scanned', fmt(r.scanned_at)]])),
+      h('div', null, h('h3', null, 'Google Play'), dl(playPairs)),
+      cb.launchesOf(r.slug).length ? cb.launchView(cb.launchesOf(r.slug)) : null,
+      pr?.store_public || cb.reviewsOf(r.package).length ? cb.reviewView(r, pr, cb.reviewsOf(r.package)) : null,
+      h('div', {class: 'cb-links'},
+        link(r.artifact, 'Play the web demo'), link(r.internal_link, 'Internal test join link'),
+        r.package ? link(r.play_app_id ? dev + 'app/' + r.play_app_id + '/app-dashboard' : dev + 'app-list', 'Open in Play Console') : null,
+        pr?.store_public ? link('https://play.google.com/store/apps/details?id=' + encodeURIComponent(r.package), 'Store page') : null));
+  }
+});
+
+dash.draw('rows', (tb) => {
+  const g = dash.data('games'), p = dash.data('play');
+  const {h, STATUS, fmt} = cb; const art = cb.art();
+  if (g.status === 'error') { tb.replaceChildren(h('tr', null, h('td', {colspan: 8}, 'The game list could not be loaded.'))); return; }
+  if (g.status !== 'ok') { tb.replaceChildren(); return; }
+  const play = new Map((p.status === 'ok' ? p.data : []).map((r) => [r.package, r]));
+  tb.replaceChildren(...g.data.map((r) => h('tr', {'data-key': encodeURIComponent(r.slug)},
+    h('td', null, cb.icon(art, r, true)), h('td', null, r.name), h('td', null, (STATUS[cb.status(r, play.get(r.package))] || STATUS.unknown)[0]), h('td', null, r.package ?? '—'),
+    h('td', null, r.version_name ?? '—'), h('td', null, r.version_code ?? '—'), h('td', null, fmt(r.last_local_change)), h('td', null, fmt(r.scanned_at)))));
+});
+
+dash.calc('money', {
+  title: 'Money per game',
+  description: 'All-time totals per game from the Play earnings reports, with that game\'s costs from costs.json and profit = kept - costs.',
+  inputs: ['games', 'finance', 'costs'],
+  fn: (games, finance, costs) => {
+    const num = (x) => Number(x) || 0;
+    return games.map((g) => {
+      const f = finance.filter((r) => r.package && r.package === g.package);
+      const sum = (k) => Math.round(f.reduce((a, r) => a + num(r[k]), 0) * 100) / 100;
+      const cost = Math.round(costs.filter((c) => c.game === g.slug).reduce((a, c) => a + num(c.amount), 0) * 100) / 100;
+      const net = sum('net');
+      return {slug: g.slug, name: g.name, package: g.package, currency: (f[0] && f[0].currency) || (costs[0] && costs[0].currency) || 'INR',
+        sales: f.reduce((a, r) => a + num(r.sales), 0), gross: sum('gross'), google_fee: sum('google_fee'), refunds: sum('refunds'),
+        net, costs: cost, profit: Math.round((net - cost) * 100) / 100};
+    });
+  },
+});
+
+dash.calc('money_total', {
+  title: 'Studio money totals',
+  description: 'Studio totals: kept all time and in the latest month with a report, Google fees, all costs (per game and studio-wide), profit.',
+  inputs: ['finance', 'costs'],
+  fn: (finance, costs) => {
+    const num = (x) => Number(x) || 0;
+    const month = finance.map((r) => r.month).filter(Boolean).sort().pop() || null;
+    const net = finance.reduce((a, r) => a + num(r.net), 0), cost = costs.reduce((a, c) => a + num(c.amount), 0);
+    const r2 = (x) => Math.round(x * 100) / 100;
+    return [{net: r2(net), net_month: r2(finance.filter((r) => r.month === month).reduce((a, r) => a + num(r.net), 0)), month,
+      google_fee: r2(finance.reduce((a, r) => a + num(r.google_fee), 0)), costs: r2(cost), profit: r2(net - cost),
+      currency: (finance[0] && finance[0].currency) || (costs[0] && costs[0].currency) || 'INR'}];
+  },
+});
+
+cb.cur = (v, c) => { try { return new Intl.NumberFormat('en-IN', {style: 'currency', currency: c || 'INR', maximumFractionDigits: 0}).format(v || 0); } catch { return String(v); } };
+
+dash.draw('fin', (el) => {
+  const s = dash.data('money_total');
+  if (s.status !== 'ok' || !s.data || !s.data[0]) { el.textContent = '—'; return; }
+  el.textContent = cb.cur(s.data[0][el.dataset.field], s.data[0].currency);
+});
+
+dash.draw('finmonth', (el) => {
+  const s = dash.data('money_total');
+  const m = s.status === 'ok' && s.data && s.data[0] ? s.data[0].month : null;
+  el.textContent = m ? d3.utcFormat('%B %Y')(new Date(m + '-01T00:00:00Z')) : 'no report yet';
+});
+
+const CHAI_GOAL = 10000; // first chai-fund goal, in rupees
+
+dash.draw('glass', (el) => {
+  const m = dash.data('money_total');
+  const net = m.status === 'ok' && m.data?.[0] ? m.data[0].net : 0;
+  el.style.setProperty('--fill', String(Math.max(0, Math.min(1, net / CHAI_GOAL))));
+  el.setAttribute('aria-label', `Chai fund glass, ${Math.round(Math.max(0, net) / CHAI_GOAL * 100)}% full`);
+});
+
+dash.draw('meter', (el) => {
+  const m = dash.data('money_total');
+  if (m.status !== 'ok' || !m.data?.[0]) { el.textContent = '—'; return; }
+  const net = m.data[0].net, cur = m.data[0].currency;
+  el.textContent = `${cb.cur(net, cur)} of ${cb.cur(CHAI_GOAL, cur)}` + (cb.serious ? '' : net <= 0 ? ' · glass is empty, vibes are not' : net >= CHAI_GOAL ? ' · chai fund full. Treat yourself.' : ' · sip by sip');
+});
+
+dash.draw('finstate', (el) => {
+  const f = dash.data('finance');
+  const st = ((f.meta || []).find((m) => m.label === 'Status') || {}).value;
+  el.className = 'cb-state' + (st === 'ok' ? ' ok' : '');
+  el.textContent = f.status !== 'ok' ? '—' : st === 'ok' ? 'From Play reports' : st === 'waiting' ? 'Waiting for Play access' : st === 'not-connected' ? 'Not connected' : 'Sync problem';
+});
+
+dash.draw('finrows', (tb) => {
+  const m = dash.data('money');
+  const {h} = cb; const art = cb.art();
+  if (m.status === 'error') { tb.replaceChildren(h('tr', null, h('td', {colspan: 9}, 'Could not load the money figures.'))); return; }
+  if (m.status !== 'ok' || !m.data) { tb.replaceChildren(); return; }
+  const rows = m.data.filter((r) => r.sales || r.net || r.costs || r.gross);
+  if (!rows.length) {
+    tb.replaceChildren(h('tr', null, h('td', {colspan: 9, class: 'cb-msg', style: 'white-space:normal'},
+      cb.serious ? 'No sales or costs yet. Games on internal or closed testing earn nothing, and Desi Gully Cricket starts once it is live.'
+        : '₹0.00. Character development. Testing tracks earn nothing; Desi Gully Cricket starts paying once it is live (and the BillDesk KYC clears).')));
+    return;
+  }
+  const c = (v, cur, signed) => h('td', {class: 'num' + (signed ? (v < 0 ? ' cb-neg' : v > 0 ? ' cb-pos' : '') : '')}, cb.cur(v, cur));
+  tb.replaceChildren(...rows.map((r) => h('tr', {'data-key': encodeURIComponent(r.slug)},
+    h('td', null, cb.icon(art, r, true)), h('td', null, r.name), h('td', {class: 'num'}, r.sales),
+    c(r.gross, r.currency), c(r.google_fee, r.currency), c(r.refunds, r.currency), c(r.net, r.currency, true), c(r.costs, r.currency), c(r.profit, r.currency, true))));
+});
+
+for (const el of document.querySelectorAll('#about')) {
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) break;
+  requestAnimationFrame(() => {
+    el.classList.add('arm');
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('in'); io.disconnect(); } }, {threshold: .2});
+    io.observe(el);
+    setTimeout(() => el.classList.add('in'), 3000);
+  });
+}
+
+for (const b of document.querySelectorAll('#cb-party')) {
+  b.addEventListener('click', () => { cb.preview = true; dash.draw('launch'); });
+}
+
+for (const b of document.querySelectorAll('#cb-serious')) {
+  b.setAttribute('aria-pressed', String(cb.serious));
+  b.addEventListener('click', () => {
+    cb.serious = !cb.serious;
+    try { localStorage.setItem('cb-serious', cb.serious ? '1' : '0'); } catch (e) {}
+    b.setAttribute('aria-pressed', String(cb.serious));
+    document.getElementById('cb')?.classList.toggle('serious', cb.serious);
+    for (const d of ['vibe', 'roast', 'dlsub', 'grid', 'legend', 'pipe', 'shame', 'meter', 'finrows']) dash.draw(d);
+  });
+}
+
+for (const b of document.querySelectorAll('.cb-chip[data-filter]')) {
+  b.addEventListener('click', () => {
+    for (const o of document.querySelectorAll('.cb-chip[data-filter]')) o.setAttribute('aria-pressed', String(o === b));
+    cb.filter = b.dataset.filter;
+    document.getElementById('cb')?.classList.add('enter');
+    dash.draw('grid');
+  });
+}
+</script>
+</div></body></html>
