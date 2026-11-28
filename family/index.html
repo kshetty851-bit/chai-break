@@ -26,7 +26,7 @@ window.dash = (() => {
   const draws = new Map(), calcs = new Map(), made = new Map(); let D = null;
   const data = (n) => {
     if (!D) return {status: 'loading', data: null};
-    if (n in D) return {status: 'ok', data: D[n]};
+    if (n in D) return {status: 'ok', data: D[n], meta: (D.__meta || {})[n] || []};
     const c = calcs.get(n);
     if (!c) return {status: 'error', data: null};
     try { return {status: 'ok', data: c.fn(...c.inputs.map((i) => data(i).data || []))}; }
